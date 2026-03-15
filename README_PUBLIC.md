@@ -83,11 +83,17 @@ class BudgetappApplicationTests {
 
 ## 🚀 Cómo ejecutar
 
-### Opción A: Probar en Gitpod (sin instalar nada)
+### Opción A: Probar en GitHub Codespaces (sin instalar nada, sin tarjeta)
 
-[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/fcomartin94/budgetapp)
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/fcomartin94/budgetapp)
 
-Abre el proyecto en Gitpod y la API se ejecutará automáticamente. Gitpod te dará una URL pública para probar los endpoints.
+1. Haz clic en el botón de arriba (o en [codespaces.new/fcomartin94/budgetapp](https://codespaces.new/fcomartin94/budgetapp))
+2. Inicia sesión con GitHub si te lo pide
+3. Espera a que el entorno se configure (~1-2 min). La API se inicia automáticamente
+4. En la pestaña **PORTS** (abajo), haz clic en el puerto **8080** → **"Open in Browser"**
+5. Usa esa URL para probar: `/api/saldo`, `/api/transacciones/simple`, etc.
+
+**No requiere tarjeta de crédito** — GitHub da 120 h/mes gratis a cuentas personales.
 
 ### Opción B: Probar la API en vivo (si está desplegada)
 

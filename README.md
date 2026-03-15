@@ -2,6 +2,10 @@
 
 API REST para gestion de presupuesto personal construida con Spring Boot, Spring Data JPA e H2.
 
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/fcomartin94/budgetapp)
+
+**Probar sin instalar nada**: Haz clic en el boton de arriba para abrir el proyecto en GitHub Codespaces. La API se ejecuta automaticamente; en la pestana PORTS, abre el puerto 8080. No requiere tarjeta de credito.
+
 Este documento refleja el comportamiento real del codigo actual.
 
 Si buscas una version corta y orientada a portfolio/demo, revisa `README_PUBLIC.md`.
