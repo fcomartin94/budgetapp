@@ -1,0 +1,14 @@
+# Render Blueprint - BudgetApp API
+# Conecta tu repo en https://dashboard.render.com y Render detectará este archivo
+
+services:
+  - type: web
+    runtime: docker
+    name: budgetapp-api
+    region: oregon
+
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: cloud
+
+    healthCheckPath: /api/saldo
