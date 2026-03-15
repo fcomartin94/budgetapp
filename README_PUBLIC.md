@@ -51,7 +51,7 @@ Expone una API REST para gestionar transacciones financieras personales. Permite
 
 | Tecnología | Detalles |
 |------------|----------|
-| **Java** | 25 |
+| **Java** | 21 |
 | **Spring Boot** | 4.0.3 |
 | **Spring Data JPA** | Repository pattern con Hibernate |
 | **H2 Database** | Base de datos embebida con persistencia en fichero (`./data/budgetapp`) |
@@ -108,7 +108,7 @@ curl -X POST https://TU-URL/api/transacciones/simple \
 
 ### Opción C: Ejecutar en local
 
-**Requisitos**: Java 25+, Maven 3.9+
+**Requisitos**: Java 21+, Maven 3.9+
 
 ```bash
 ./mvnw spring-boot:run

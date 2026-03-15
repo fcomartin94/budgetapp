@@ -73,7 +73,7 @@ La API permite:
 | Persistencia | H2 |
 | ORM | Spring Data JPA / Hibernate |
 | Build | Maven Wrapper |
-| Version Java declarada | `25` |
+| Version Java declarada | `21` |
 
 Estructura principal:
 
@@ -204,7 +204,7 @@ Request:
 
 ### Requisitos
 
-- JDK compatible con el proyecto (`java.version=25` en `pom.xml`).
+- JDK compatible con el proyecto (`java.version=21` en `pom.xml`).
 - Maven Wrapper incluido (`./mvnw`).
 
 ### Ejecutar app
