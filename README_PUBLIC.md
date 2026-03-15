@@ -87,11 +87,11 @@ class BudgetappApplicationTests {
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/fcomartin94/budgetapp)
 
-1. Haz clic en el botón de arriba (o en [codespaces.new/fcomartin94/budgetapp](https://codespaces.new/fcomartin94/budgetapp))
-2. Inicia sesión con GitHub si te lo pide
-3. Espera a que el entorno se configure (~1-2 min). La API se inicia automáticamente
-4. En la pestaña **PORTS** (abajo), haz clic en el puerto **8080** → **"Open in Browser"**
-5. Usa esa URL para probar: `/api/saldo`, `/api/transacciones/simple`, etc.
+**Guía para recruiters** — 3 pasos:
+
+1. **Abrir**: Clic en el botón de arriba → inicia sesión con GitHub si te lo pide
+2. **Arrancar**: En la terminal, ejecuta `./mvnw spring-boot:run` y espera a ver *"Started BudgetappApplication"*
+3. **Probar**: Pestaña **PORTS** (abajo) → puerto **8080** → **"Open in Browser"** → verás una página con enlaces para probar la API
 
 **No requiere tarjeta de crédito** — GitHub da 120 h/mes gratis a cuentas personales.
 

@@ -4,7 +4,11 @@ API REST para gestion de presupuesto personal construida con Spring Boot, Spring
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/fcomartin94/budgetapp)
 
-**Probar sin instalar nada**: Haz clic en el boton de arriba para abrir el proyecto en GitHub Codespaces. La API se ejecuta automaticamente; en la pestana PORTS, abre el puerto 8080. No requiere tarjeta de credito.
+**Probar sin instalar nada** (ideal para recruiters):
+1. Clic en el boton de arriba → abre el proyecto en GitHub Codespaces
+2. En la terminal: `./mvnw spring-boot:run` (espera a ver "Started BudgetappApplication")
+3. Pestana **PORTS** (abajo) → puerto 8080 → **"Open in Browser"**
+4. Veras una pagina con enlaces para probar la API. No requiere tarjeta de credito.
 
 Este documento refleja el comportamiento real del codigo actual.
 
