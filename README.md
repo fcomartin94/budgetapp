@@ -47,6 +47,25 @@ cd finanz-app
 ./gradlew assembleDebug
 ```
 
+## Probar Finanz API en Codespaces
+
+Desde el botón del README raíz puedes probar `finanz-api` sin instalar nada:
+
+1. Abre el Codespace desde el botón "Open in GitHub Codespaces".
+2. En la terminal del Codespace ejecuta:
+
+```bash
+cd finanz-api
+./mvnw spring-boot:run
+```
+
+1. Ve a la pestaña **PORTS**, localiza el puerto `8080` y pulsa **Open in Browser**.
+2. Verifica rápido con:
+
+```bash
+curl http://localhost:8080/api/saldo
+```
+
 ## Cuándo usar cada una
 
 - Usa **Finanz Core** para enseñar arquitectura en capas y fundamentos sin frameworks.
