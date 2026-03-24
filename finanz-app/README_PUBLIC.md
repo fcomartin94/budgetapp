@@ -2,6 +2,8 @@
 
 > Aplicacion Android nativa para control financiero personal, construida con **Kotlin + Jetpack Compose + Room**. Mantiene la misma logica de dominio de las versiones Finanz Core/Finanz API, pero optimizada para una experiencia movil moderna y reactiva.
 
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/fcomartin94/finanz-core)
+
 ---
 
 ## 🎯 ¿Que hace esta app?
