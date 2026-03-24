@@ -4,18 +4,18 @@ REST API for personal budget management built with Spring Boot, Spring Data JPA 
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/fcomartin94/finanz-core)
 
-If you're looking for a short, portfolio/demo-oriented version, check out `OVERVIEW_ES.md`.
-
 ---
 
 ## Index
 
-- [1. Current state](#1-current-state)
-- [2. Quick execution](#2-quick-execution)
-- [3. Primary endpoints](#3-main-endpoints)
-- [4. Technical structure](#4-technical-structure)
-- [5. Configuration](#5-configuration)
-- [6. Relationship with the monorepo](#6-relationship-with-the-monorepo)
+- [Finanz API (`finanz-api/`)](#finanz-api-finanz-api)
+  - [Index](#index)
+  - [1. Current status](#1-current-status)
+  - [2. Quick execution](#2-quick-execution)
+  - [3. Primary endpoints](#3-primary-endpoints)
+  - [4. Technical structure](#4-technical-structure)
+  - [5. Configuration](#5-configuration)
+  - [6. Relationship with the monorepo](#6-relationship-with-the-monorepo)
 
 ---
 

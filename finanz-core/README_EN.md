@@ -4,22 +4,28 @@ Personal budget application in console built with pure Java, without frameworks,
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/fcomartin94/finanz-core)
 
-If you're looking for a short, portfolio/demo-oriented version, check out `OVERVIEW_ES.md`.
-
 ---
 
 ## Index
 
-- [1. Current state](#1-current-state)
-- [2. Features](#2-features)
-- [3. Technical architecture](#3-technical-architecture)
-- [4. Domain model](#4-domain-model)
-- [5. CSV Persistence](#5-csv-persistence)
-- [6. User manual](#6-user-manual)
-- [7. Compilation and execution](#7-compile-and-execution)
-- [8. Technical considerations](#8-technical-considerations)
-- [9. Relationship with Finanz API and Finanz App](#9-relationship-with-finanz-api-and-finanz-app)
-- [10. Recommended roadmap](#10-recommended-roadmap)
+- [Finanz Core (`finanz-core/`)](#finanz-core-finanz-core)
+  - [Index](#index)
+  - [1. Current status](#1-current-status)
+  - [2. Features](#2-features)
+  - [3. Technical architecture](#3-technical-architecture)
+  - [4. Domain model](#4-domain-model)
+    - [`TransactionType`](#transactiontype)
+    - [`Transaction`](#transaction)
+  - [5. CSV Persistence](#5-csv-persistence)
+  - [6. User manual](#6-user-manual)
+    - [Main menu](#main-menu)
+    - [Recommended flow](#recommended-flow)
+    - [Input validations](#input-validations)
+  - [7. Compilation and execution](#7-compilation-and-execution)
+    - [Run unit tests](#run-unit-tests)
+  - [8. Technical considerations](#8-technical-considerations)
+  - [9. Relationship with Finanz API and Finanz App](#9-relationship-with-finanz-api-and-finanz-app)
+  - [10. Recommended roadmap](#10-recommended-roadmap)
 
 ---
 

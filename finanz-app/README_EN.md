@@ -2,24 +2,34 @@
 
 Native Android application for personal financial control, developed with Kotlin, Jetpack Compose and Room.
 
-If you're looking for a short, portfolio/demo-oriented version, check out `OVERVIEW_ES.md`.
-
 ---
 
 ## Index
 
-- [1. Current actual state](#1-current-actual-state)
-- [2. Functional vision](#2-functional-vision)
-- [3. Technical stack](#3-technical-stack)
-- [4. App architecture](#4-app-architecture)
-- [5. Data model and persistence](#5-data-model-and-persistence)
-- [6. Navigation and screens](#6-navigation-and-screens)
-- [7. User manual](#7-user-manual)
-- [8. Responsive behavior and UI](#8-responsive-behavior-and-ui)
-- [9. Compilation and installation](#9-compile-and-installation)
-- [10. Current limitations](#10-current-limitations)
-- [11. Relationship with `finanz-core` and `finanz-api`](#11-relationship-with-finanz-core-and-finanz-api)
-- [12. Recommended roadmap](#12-recommended-roadmap)
+- [Finanz App (`finanz-app/`)](#finanz-app-finanz-app)
+  - [Index](#index)
+  - [1. Current actual status](#1-current-actual-status)
+  - [2. Functional vision](#2-functional-vision)
+  - [3. Technical stack](#3-technical-stack)
+  - [4. App architecture](#4-app-architecture)
+  - [5. Data model and persistence](#5-data-model-and-persistence)
+    - [Primary entity `Transaction`](#primary-entity-transaction)
+    - [Category](#category)
+  - [6. Navigation and screens](#6-navigation-and-screens)
+    - [Transactions](#transactions)
+    - [Summary](#summary)
+  - [7. User manual](#7-user-manual)
+    - [7.1 Register a movement](#71-register-a-movement)
+    - [7.2 Check financial health](#72-check-financial-health)
+    - [7.3 Correct data](#73-correct-data)
+  - [8. Responsive behavior and UI](#8-responsive-behavior-and-ui)
+  - [9. Compilation and installation](#9-compilation-and-installation)
+    - [Requirements](#requirements)
+    - [Run from Android Studio](#run-from-android-studio)
+    - [Generate debug APK](#generate-debug-apk)
+  - [10. Current limitations](#10-current-limitations)
+  - [11. Relationship with `finanz-core` and `finanz-api`](#11-relationship-with-finanz-core-and-finanz-api)
+  - [12. Recommended roadmap](#12-recommended-roadmap)
 
 ---
 
