@@ -1,0 +1,407 @@
+================================================================================
+  ENTREVISTA DE DEFENSA — TRABAJO DE INGENIERÍA INFORMÁTICA
+  Proyecto: Finanz App (Kotlin + Jetpack Compose + Room)
+  Nivel: Profundo — Verificación de autoría y comprensión técnica
+================================================================================
+
+INSTRUCCIONES AL EXAMINADOR
+────────────────────────────
+Las preguntas están agrupadas por bloques temáticos. Cada una incluye la
+respuesta esperada de un alumno que realmente construyó la aplicación.
+Se recomienda mezclar preguntas de distintos bloques para comprobar que el
+conocimiento es real y no memorizado en orden lineal.
+Las preguntas marcadas con [TRAMPA] están diseñadas para detectar lagunas:
+quien no tocó el código suele responder con genéricos sin detalles concretos.
+
+================================================================================
+BLOQUE 1 — VISIÓN GENERAL Y DECISIONES DE STACK
+================================================================================
+
+P1. Descríbeme la app Android en términos funcionales y tecnológicos.
+
+R1. Es una app nativa Android para finanzas personales. Permite registrar
+    ingresos y gastos, ver saldo total, saldo del mes y resumen mensual,
+    además de eliminar movimientos del historial. Está hecha con Kotlin,
+    Jetpack Compose (Material 3), Navigation Compose y Room sobre SQLite.
+    Sigue una arquitectura por capas: data, domain y ui, con ViewModel para
+    estado reactivo.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P2. ¿Por qué usar Compose + Room para este alcance y no XML + SQLiteOpenHelper?
+
+R2. Compose acelera la iteración de UI y permite modelar pantallas declarativas
+    con menos boilerplate que XML + fragments. Room evita SQL manual repetitivo:
+    define entidad/DAO y genera implementación segura en compile-time. Para una
+    app offline de alcance académico, la combinación da rapidez de desarrollo,
+    claridad de arquitectura y persistencia robusta sin infraestructura externa.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P3. ¿Qué ventajas aporta minSdk 26 para este proyecto concreto?
+
+R3. Con minSdk 26 ya hay soporte estable para APIs modernas de Android y no
+    necesito compat hacks para cosas básicas. Además la app usa LocalDate en
+    el dominio; con API 26 la base del runtime es más amigable para java.time.
+    Reduce complejidad de compatibilidad y mantiene cobertura suficiente para
+    un proyecto de evaluación técnica.
+
+================================================================================
+BLOQUE 2 — ARQUITECTURA Y FLUJO DE DATOS
+================================================================================
+
+P4. Explica la estructura principal de paquetes y responsabilidad de cada capa.
+
+R4.
+  - data/model: tipos de dominio persistibles (Transaccion, TipoTransaccion,
+    Categoria).
+  - data/local: Room (AppDatabase, DAO, repository, converters).
+  - domain: BudgetService con reglas de negocio (saldo, resumen, altas, bajas).
+  - ui: navegación, pantallas Compose y BudgetViewModel.
+  - MainActivity + FinanzApp: bootstrap de Android y composición de dependencias.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P5. ¿Cuál es el flujo completo de alta de movimiento desde UI hasta SQLite?
+
+R5. En `TransaccionesScreen`, al pulsar "Guardar movimiento", se valida que
+    descripción no esté vacía y que monto > 0. Luego se llama al callback del
+    ViewModel (`registrarTransaccion`). El ViewModel delega en `BudgetService`,
+    que crea la `Transaccion` con `LocalDate.now()` y categoría por defecto
+    ("General", 0.0), y llama a `TransaccionRepository.insertar`. El repo llama
+    al DAO y Room ejecuta el INSERT en SQLite.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P6. [TRAMPA] ¿Dónde se hace la inyección de dependencias y qué patrón se usa?
+
+R6. Es inyección manual simple, no Hilt/Koin. `FinanzApp` (Application) crea
+    lazy la base de datos y el repositorio. `BudgetViewModel` castea
+    `application as FinanzApp` y construye `BudgetService` con ese repositorio.
+    La composición está repartida entre `FinanzApp` y el constructor del
+    ViewModel, sin contenedor DI externo.
+
+================================================================================
+BLOQUE 3 — ROOM, MODELO Y PERSISTENCIA
+================================================================================
+
+P7. ¿Cómo está modelada la entidad `Transaccion` y por qué `id` es `Long`?
+
+R7. `Transaccion` es `@Entity(tableName = "transacciones")` con:
+    `id: Long` autogenerado (`@PrimaryKey(autoGenerate = true)`), `descripcion`,
+    `monto`, `tipo`, `fecha` y `categoria` embebida con `@Embedded(prefix="cat_")`.
+    El ID en `Long` es estándar para claves auto-generadas y evita límites
+    estrechos de `Int` si el volumen creciera.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P8. ¿Por qué hay `Converters` y qué convierten exactamente?
+
+R8. Room no persiste directamente `LocalDate` ni enums con la estrategia que
+    queremos por defecto, así que `Converters` define:
+    - `LocalDate <-> String` en formato ISO (`toString` / `parse`).
+    - `TipoTransaccion <-> String` usando `name` y `valueOf`.
+    Esto permite queries por fecha y tipo sobre valores serializados estables.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P9. ¿Qué papel cumple `@Embedded(prefix = "cat_")` en `categoria`?
+
+R9. `Categoria` no es una tabla aparte en esta app; se aplana dentro de la
+    misma tabla `transacciones`. El `prefix` evita colisiones de nombre de
+    columna. Room creará columnas como `cat_nombre` y `cat_presupuestoLimite`.
+    Se conserva compatibilidad de dominio aunque la UI no edite categoría.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P10. [TRAMPA] ¿Cómo implementas la eliminación? ¿Con `@Delete` o por query?
+
+R10. En el DAO existen ambos métodos, pero la app usa eliminación por ID:
+     `@Query("DELETE FROM transacciones WHERE id = :id")`. El repositorio expone
+     `eliminar(id)` y delega a `eliminarPorId`. El método `@Delete` está
+     declarado pero no participa en el flujo normal actual.
+
+================================================================================
+BLOQUE 4 — REPOSITORIO, COROUTINES Y FLUJOS REACTIVOS
+================================================================================
+
+P11. ¿Qué diferencia hay entre `transacciones: Flow<List<Transaccion>>` y
+     `obtenerTodas(): List<Transaccion>` en el repositorio?
+
+R11. `transacciones` es stream reactivo continuo para que UI se actualice al
+     cambiar la BD. `obtenerTodas()` es consulta puntual suspend que hace
+     `dao.obtenerTodas().first()` para cálculos síncronos en servicio
+     (saldo total). Se usan ambos: reactivo para render, puntual para reglas.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P12. ¿Por qué el ViewModel observa el `Flow` y además recalcula métricas?
+
+R12. Porque al llegar una nueva lista de transacciones no basta con mostrarla:
+    también hay que refrescar `saldoTotal`, `saldoMesActual` y `resumenMensual`.
+    Por eso en `observarTransacciones()` se actualiza la lista y luego se llama
+    a `actualizarCalculos()`, manteniendo todo el `UiState` consistente.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P13. [TRAMPA] Si ya observas Room con Flow, ¿para qué sirve `cargarDatos()`?
+
+R13. `cargarDatos()` activa `isLoading` y fuerza un cálculo inicial de KPIs
+     aunque aún no haya emisión nueva útil del flujo para esas métricas.
+     El Flow mantiene la lista viva, pero `cargarDatos()` garantiza bootstrap
+     explícito del estado agregado al iniciar.
+
+================================================================================
+BLOQUE 5 — LÓGICA DE NEGOCIO EN `BudgetService`
+================================================================================
+
+P14. ¿Qué reglas aplica `registrarTransaccion` además de insertar?
+
+R14. No inserta el objeto recibido directamente: construye una transacción con
+    fecha actual (`LocalDate.now()`) y categoría por defecto (`General`, 0.0).
+    Así unifica criterio temporal y mantiene compatibilidad con el dominio que
+    aún modela categoría/presupuesto aunque la UI esté simplificada.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P15. ¿Cómo calculas `calcularSaldoMesActual()` y por qué no reutilizas
+     simplemente `calcularSaldo()`?
+
+R15. `calcularSaldoMesActual()` define rango [primer día del mes actual, hoy]
+    y pide al repositorio `obtenerEntreFechas(inicio, fin)`. Sobre ese subset
+    suma ingresos y resta gastos. `calcularSaldo()` usa todas las transacciones.
+    Son reglas distintas: acumulado histórico vs ventana mensual.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P16. ¿Qué devuelve `obtenerResumenMensual()` exactamente?
+
+R16. Devuelve un `ResumenMensual` con:
+    - `mes`, `anio`
+    - `ingresos`
+    - `gastos`
+    - `saldo` (ingresos - gastos)
+    - `transacciones` del mes actual
+    La pantalla de resumen usa ese objeto para KPIs, barra de proporción y lista
+    de recientes.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P17. [TRAMPA] ¿Dónde está la validación de negocio del alta ahora mismo?
+
+R17. La validación mínima está en UI (`descripcion.isNotBlank()` y `m > 0.0`)
+     antes de invocar el ViewModel. En `BudgetService` no hay guardas extra.
+     Eso implica que si mañana entra otro cliente directo al servicio/repositorio,
+     habría que mover validación al dominio para robustez transversal.
+
+================================================================================
+BLOQUE 6 — UI COMPOSE Y NAVEGACIÓN
+================================================================================
+
+P18. ¿Cómo están definidas las rutas y qué pantalla es startDestination?
+
+R18. En `Routes` hay tres constantes: `home`, `transacciones`, `resumen`.
+    `FinanzAppNavHost` usa `NavHost(..., startDestination = Routes.HOME)`.
+    Desde Home se navega a Transacciones y Resumen; desde las otras dos se
+    vuelve con `popBackStack()`.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P19. ¿Cómo llega el estado a las pantallas y cómo se observa?
+
+R19. El ViewModel expone `StateFlow<UiState>`. Cada pantalla recibe ese
+    StateFlow por parámetro y hace `collectAsStateWithLifecycle()` para
+    observar respetando ciclo de vida. Así se evitan observaciones activas
+    fuera de estado STARTED/RESUMED y se minimizan fugas/recomposiciones inútiles.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P20. ¿Qué medidas concretas de UX responsive aplicaste para móviles reales?
+
+R20. En pantallas principales uso:
+    - `Scaffold(contentWindowInsets = WindowInsets.safeDrawing)`
+    - `navigationBarsPadding()`
+    - `imePadding()`
+    Esto evita que top/bottom bars o teclado tapen contenido/acciones.
+    Además se combina `LazyColumn` o `verticalScroll` según la naturaleza de
+    la pantalla para mantener accesibilidad del contenido.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P21. [TRAMPA] En Transacciones, ¿qué diferencia visual exacta hay entre ingreso
+     y gasto, más allá del signo del importe?
+
+R21. Hay varias señales: color de tarjeta (primaryContainer vs errorContainer),
+     barra lateral coloreada, chip deshabilitado con etiqueta INGRESO/GASTO y
+     paleta distinta de texto/chip. El importe además muestra prefijo + o - y
+     color verde/error. No es solo un texto distinto.
+
+================================================================================
+BLOQUE 7 — ESTADO, VIEWMODEL Y CICLO DE VIDA
+================================================================================
+
+P22. ¿Por qué `BudgetViewModel` hereda de `AndroidViewModel` y no de `ViewModel`?
+
+R22. Necesita acceso al `Application` para recuperar la instancia de `FinanzApp`
+    y desde ahí obtener repositorio/db. Con `ViewModel` puro no tendría ese
+    contexto de aplicación de forma directa en el constructor estándar.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P23. ¿Qué contiene `UiState` y qué papel juega `isLoading`?
+
+R23. `UiState` agrega lista de transacciones, saldo total, saldo mes actual,
+    resumen mensual opcional e indicador `isLoading`. `isLoading` se activa en
+    `cargarDatos()` para representar bootstrap de cálculos iniciales y evitar
+    flashes de estado incompleto en arranque.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P24. [TRAMPA] ¿Hay riesgo de trabajo duplicado o cálculos redundantes en el
+     ViewModel? Justifica.
+
+R24. Sí, potencialmente: en `init` se llama `cargarDatos()` y en paralelo se
+     arranca `observarTransacciones()`, que también desencadena `actualizarCalculos()`
+     en cada emisión. Puede haber recalculo inicial duplicado. Es aceptable para
+     escala pequeña, pero en app grande convendría deduplicar triggers.
+
+================================================================================
+BLOQUE 8 — BUILD, TOOLING Y CONFIGURACIÓN
+================================================================================
+
+P25. Enumera plugins y versiones clave que sustentan el build actual.
+
+R25. En módulo app:
+    - `com.android.application`
+    - `org.jetbrains.kotlin.android`
+    - `com.google.devtools.ksp`
+    Con AGP 8.5.2, Kotlin 1.9.24, compile/targetSdk 35, minSdk 26, Java/Kotlin
+    target 17. Para Room se usa 2.6.1 con compilación de anotaciones vía KSP.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P26. ¿Por qué usas KSP con Room y no KAPT?
+
+R26. KSP es más moderno y suele ser más rápido en builds incrementales para
+    procesadores compatibles como Room. Reduce coste de generación y encaja con
+    la recomendación actual del ecosistema Kotlin/Android para nuevos proyectos.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P27. [TRAMPA] Si falla la compilación de Room por converters, ¿dónde mirarías
+     primero y qué síntoma esperarías?
+
+R27. Revisaría `Converters` y la anotación `@TypeConverters(Converters::class)`
+     en `AppDatabase`. Si falta alguno, Room suele fallar en compile-time
+     indicando que no sabe persistir un tipo (por ejemplo `LocalDate`).
+     No es un fallo silencioso de runtime típico: normalmente rompe build.
+
+================================================================================
+BLOQUE 9 — LIMITACIONES, RIESGOS Y ROADMAP
+================================================================================
+
+P28. ¿Qué limitaciones funcionales reales tiene la app en su estado actual?
+
+R28. No hay edición de movimientos (solo alta/borrado), no hay filtros avanzados
+    por fecha/tipo en pantalla de historial, no hay export/import, no existe
+    sincronización cloud y hay inconsistencia menor en formato de moneda
+    (`€` y `EUR` en pantallas diferentes).
+
+────────────────────────────────────────────────────────────────────────────────
+
+P29. ¿Qué deuda técnica detectas en validación y cómo la mejorarías?
+
+R29. La validación está acoplada a UI. Mejoraría moviendo reglas al dominio:
+    un caso de uso/validador en `BudgetService` que rechace descripciones vacías
+    y montos no positivos, devolviendo resultado tipado (éxito/error). Así
+    cualquier cliente (UI actual, tests, API futura) respeta mismas reglas.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P30. [TRAMPA] Si mañana quieres soporte multiusuario y sync en nube, ¿qué parte
+     de la arquitectura tocarías primero?
+
+R30. Empezaría por capa data: introducir una fuente remota y estrategia de sync
+     (offline-first con merge/conflictos), manteniendo dominio estable y ViewModel
+     reactivo. La UI es lo último. El punto crítico es repositorio + modelo de
+     datos (identidades remotas, timestamps de sync, estados pendientes).
+
+================================================================================
+BLOQUE 10 — INTEGRACIÓN CON LOS OTROS MÓDULOS DEL REPOSITORIO
+================================================================================
+
+P31. ¿Cómo se alinea este módulo Android con `finanz-core` y Finanz API (`finanz-api/`)?
+
+R31. Comparte el dominio financiero base (transacción con ingreso/gasto, saldo,
+    resumen mensual). `finanz-core` representa la versión Finanz Core didáctica y
+    Finanz API (`finanz-api/`) como API REST. Android prioriza UX móvil offline y simplifica
+    captura de datos, pero mantiene semántica de negocio compatible.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P32. ¿Por qué en Android aún existe `Categoria` si la UI ya no la pide?
+
+R32. Por compatibilidad de dominio y evolución gradual. El modelo conserva
+    `Categoria` para no romper contratos internos y para facilitar integración
+    con variantes donde categoría sí se usa. En altas Android se fija valor
+    por defecto "General" con límite 0.0.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P33. [TRAMPA] ¿Android consume hoy directamente el backend REST de Finanz API (`finanz-api/`)?
+
+R33. No en el estado actual. Esta app persiste local con Room y funciona offline
+     sin cliente HTTP configurado. El README menciona alineación de dominio, no
+     integración de red ya implementada.
+
+================================================================================
+BLOQUE 11 — PREGUNTAS DE DETALLE DE CÓDIGO
+================================================================================
+
+P34. ¿Qué hace exactamente `dao.obtenerTodas().first()` en el repositorio y qué
+     implicación tiene?
+
+R34. Toma la primera emisión del Flow de Room y suspende hasta tenerla. Permite
+    usar una API de lista puntual para cálculos de servicio. Implicación: para
+    cada cálculo puntual se materializa snapshot de datos; en gran escala sería
+    mejor optimizar con queries agregadas SQL para evitar lecturas completas.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P35. En `ResumenScreen`, ¿cómo se calcula la barra de proporción de gasto y por
+     qué se usa `coerceIn(0.0, 1.0)`?
+
+R35. Se calcula `gastos / ingresos` cuando ingresos > 0. Si no, se usa 0f para
+    evitar división inválida. `coerceIn(0.0, 1.0)` fuerza rango válido para
+    `LinearProgressIndicator`, evitando valores > 1 cuando gasto supere ingreso.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P36. [TRAMPA] ¿Dónde se define el nombre real de la base local y cómo lo sabes?
+
+R36. En `AppDatabase.getDatabase`, dentro de `Room.databaseBuilder(..., "finanzapp_db")`.
+     No sale de un archivo mágico; está hardcodeado en ese builder.
+
+================================================================================
+SEÑALES DE ALERTA PARA EL EXAMINADOR
+================================================================================
+
+Las siguientes situaciones deben aumentar la sospecha de que el alumno no
+construyó realmente esta app:
+
+1. No sabe que la app funciona offline con Room y afirma que usa backend REST.
+2. No puede explicar por qué existe `FinanzApp` (Application) ni su rol.
+3. Confunde `Flow` reactivo con `List` puntual en el repositorio.
+4. No conoce que se usa categoría por defecto "General" al registrar.
+5. No sabe qué convierten los `TypeConverter` (LocalDate y enum).
+6. No recuerda las rutas reales (`home`, `transacciones`, `resumen`).
+7. Afirma que la eliminación se hace por `@Delete` cuando el flujo usa query por ID.
+8. No detecta la validación mínima en UI y la ausencia de validación fuerte en dominio.
+9. No identifica los insets (`safeDrawing`, `imePadding`, `navigationBarsPadding`).
+10. No puede justificar el uso de `AndroidViewModel` en lugar de `ViewModel`.
+11. Mezcla versiones/stack (dice XML clásico o LiveData cuando el proyecto usa Compose + StateFlow).
+12. No conoce limitaciones actuales (sin edición, sin sync cloud, formato moneda mixto).
+
+================================================================================
+FIN DE LA ENTREVISTA
+================================================================================

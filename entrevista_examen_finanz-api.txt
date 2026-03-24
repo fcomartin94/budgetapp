@@ -1,0 +1,537 @@
+================================================================================
+  ENTREVISTA DE DEFENSA — TRABAJO DE INGENIERÍA INFORMÁTICA
+  Proyecto: Finanz API (Java + Spring Boot + H2 + JPA)
+  Nivel: Profundo — Verificación de autoría y comprensión técnica
+================================================================================
+
+INSTRUCCIONES AL EXAMINADOR
+────────────────────────────
+Las preguntas están agrupadas por bloques temáticos. Cada una incluye la
+respuesta esperada de un alumno que realmente construyó la aplicación.
+Se recomienda mezclar preguntas de distintos bloques para comprobar que el
+conocimiento es real y no memorizado en orden lineal.
+Las preguntas marcadas con [TRAMPA] están diseñadas para detectar lagunas:
+quien no tocó el código suele responder con genéricos sin detalles concretos.
+
+================================================================================
+BLOQUE 1 — VISIÓN GENERAL Y DECISIONES DE STACK
+================================================================================
+
+P1. Descríbeme la aplicación en términos funcionales y tecnológicos.
+
+R1. Es una API REST para gestión de presupuesto personal construida con
+    Spring Boot. Permite registrar ingresos y gastos, listar transacciones,
+    eliminarlas y consultar saldo total, saldo del mes actual y un resumen
+    mensual detallado. Los datos se persisten en una base de datos H2 embebida.
+    En local se guarda en disco; en cloud se usa H2 en memoria activando
+    el perfil "cloud". Incluye un pequeño frontend estático en HTML para
+    explorar los endpoints desde el navegador, y un Dockerfile para desplegar
+    en Render, Railway o Fly.io.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P2. ¿Por qué elegiste Spring Boot + H2 en lugar de continuar con Java puro
+    y CSV como en el módulo "finanz-core"?
+
+R2. El objetivo de este módulo es demostrar la evolución natural de la misma
+    lógica de negocio hacia un entorno web. Spring Boot elimina boilerplate de
+    configuración HTTP (servidor embebido, serialización JSON, gestión de rutas).
+    H2 permite tener persistencia real con SQL sin instalar ninguna base de datos
+    externa, lo que simplifica el setup local y el despliegue en cloud. El
+    dominio (transacciones, saldo, resumen) es el mismo que en "finanz-core"; cambia
+    la capa de acceso a datos y la interfaz de entrada.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P3. ¿Qué versión de Java y de Spring Boot usa el proyecto?
+
+R3. Java 21 y Spring Boot 4.0.x. El pom.xml hereda del parent
+    spring-boot-starter-parent versión 4.0.3 y declara
+    <java.version>21</java.version> en las properties.
+
+================================================================================
+BLOQUE 2 — ARQUITECTURA Y ESTRUCTURA DE PAQUETES
+================================================================================
+
+P4. Explícame la estructura de paquetes y la responsabilidad de cada uno.
+
+R4.
+  - model/        → Entidades del dominio: Transaccion (entidad JPA) y
+                    TipoTransaccion (enum). No contienen lógica de negocio.
+  - repository/   → Interfaz JpaRepository que Spring implementa en runtime.
+                    Declara métodos de consulta por tipo y por rango de fechas.
+  - service/      → BudgetService: lógica de negocio (calcular saldo, resumen
+                    mensual, registrar, eliminar). Anotado con @Service.
+  - controller/   → BudgetController: expone los endpoints REST. Anotado con
+                    @RestController. Delega en el servicio.
+  - controller/dto/ → SimpleTransaccionRequest: DTO de entrada para el endpoint
+                    simplificado de registro.
+  - FinanzApiApplication.java → Punto de entrada con @SpringBootApplication.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P5. ¿Cuál es el flujo completo cuando alguien hace un POST a
+    /api/transacciones/simple?
+
+R5. La petición HTTP llega a BudgetController.registrarSimple(). El controlador
+    extrae el cuerpo JSON como SimpleTransaccionRequest y valida que descripcion
+    no sea nula ni vacía, que monto sea mayor que 0 y que tipo no sea nulo.
+    Si alguna validación falla, devuelve 400 Bad Request.
+    Si todo es correcto, llama a servicio.registrarSimple(descripcion, monto, tipo),
+    que construye una Transaccion con LocalDate.now() y llama a repositorio.save().
+    Spring Data JPA ejecuta el INSERT en H2 y devuelve la entidad con el ID
+    asignado. El controlador devuelve esa entidad serializada como JSON con
+    código 200 OK.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P6. [TRAMPA] ¿Cómo se inyectan las dependencias en esta app? ¿Usas @Autowired?
+
+R6. No se usa @Autowired explícito en ningún lado. Se usa inyección por
+    constructor en todas las clases: BudgetController recibe BudgetService,
+    y BudgetService recibe TransaccionRepository. Spring detecta los beans
+    por las anotaciones (@RestController, @Service, @Repository) y resuelve
+    las dependencias automáticamente al ver el constructor. Esta forma es la
+    recomendada actualmente porque hace las dependencias obligatorias explícitas
+    y facilita los tests.
+
+================================================================================
+BLOQUE 3 — MODELO DE DATOS Y JPA
+================================================================================
+
+P7. ¿Cómo está anotada la entidad Transaccion y qué significa cada anotación?
+
+R7. La clase lleva @Entity y @Table(name = "transacciones"), que le dicen a
+    Hibernate que mapee esta clase a la tabla "transacciones" en la base de datos.
+    El campo id es Long con @Id y @GeneratedValue(strategy = GenerationType.IDENTITY),
+    lo que delega la generación del ID al autoincrement de la base de datos.
+    El campo tipo lleva @Enumerated(EnumType.STRING), que hace que el enum se
+    persista como texto ("INGRESO" o "GASTO") en lugar de como número.
+    El campo fecha es LocalDate, que JPA/Hibernate sabe convertir a DATE de SQL.
+    También hay un constructor vacío sin parámetros que JPA necesita para
+    instanciar objetos al recuperarlos de la base de datos.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P8. ¿Por qué el campo id es Long y no int, como en la versión Finanz Core?
+
+R8. Por convención de JPA. Spring Data JPA espera que el tipo del ID coincida
+    con el segundo parámetro genérico de JpaRepository. Al usar
+    JpaRepository<Transaccion, Long>, el repositorio, los métodos como
+    findById(Long id) y deleteById(Long id) son consistentes con el tipo del
+    campo. Usar int causaría problemas de compatibilidad de tipos con los
+    métodos generados por Spring Data.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P9. ¿Qué diferencia hay entre la clase Transaccion en "finanz-core" y en "finanz-api"?
+
+R9. En "finanz-core" es una clase Java pura: el id es int gestionado manualmente por
+    un contador en el repositorio, y no tiene ninguna anotación de framework.
+    En Finanz API (`finanz-api/`) es una entidad JPA: lleva @Entity, el id es Long autogenerado
+    por la BD, y tiene un constructor vacío obligatorio para Hibernate.
+    La lógica de negocio (campos descripcion, monto, tipo, fecha) es la misma,
+    pero la gestión del ciclo de vida del objeto la delega en el framework.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P10. [TRAMPA] ¿Por qué @Enumerated(EnumType.STRING) y no el tipo por defecto?
+
+R10. El tipo por defecto de @Enumerated es ORDINAL, que persiste el enum como
+     su posición (0, 1, 2...). Eso es frágil: si en el futuro se reordena el
+     enum o se añade un valor en medio, los datos existentes quedan corruptos
+     porque los índices cambian. Con EnumType.STRING se guarda "INGRESO" o
+     "GASTO", que es estable independientemente del orden de declaración.
+
+================================================================================
+BLOQUE 4 — REPOSITORIO Y SPRING DATA JPA
+================================================================================
+
+P11. El repositorio es solo una interfaz. ¿Quién proporciona la implementación?
+
+R11. Spring Data JPA. En tiempo de arranque, Spring genera automáticamente
+     una implementación de la interfaz TransaccionRepository usando proxies
+     dinámicos. Hereda de JpaRepository, que ya incluye save(), findAll(),
+     findById(), deleteById(), existsById() y más. No hay que escribir
+     ninguna consulta SQL para esas operaciones.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P12. El repositorio declara findByTipo y findByFechaBetween. ¿Cómo funciona
+     eso? ¿Tienes que escribir el SQL?
+
+R12. No. Spring Data JPA usa la convención de nombres de métodos para generar
+     las consultas automáticamente. "findByTipo" genera
+     "SELECT * FROM transacciones WHERE tipo = ?". "findByFechaBetween"
+     genera "SELECT * FROM transacciones WHERE fecha BETWEEN ? AND ?".
+     Spring analiza el nombre del método, lo descompone por palabras clave
+     (findBy, Between) y produce la query JPQL correspondiente. Si el nombre
+     no sigue la convención, la aplicación falla al arrancar.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P13. [TRAMPA] ¿Por qué hay dos endpoints de registro: /transacciones y
+     /transacciones/simple? ¿Para qué sirve el DTO?
+
+R13. El endpoint /transacciones acepta directamente la entidad Transaccion
+     completa en el body, útil para clientes que ya conocen el contrato
+     interno del modelo. El endpoint /transacciones/simple acepta un DTO
+     más ligero (SimpleTransaccionRequest) con solo descripcion, monto y tipo,
+     sin exponer el id ni la fecha (que el servidor asigna).
+     El DTO desacopla el contrato de la API de la entidad JPA: si Hibernate
+     añade columnas internas o cambia el modelo, el contrato público no cambia.
+     Además, el endpoint simple hace validación explícita antes de llamar al
+     servicio.
+
+================================================================================
+BLOQUE 5 — CAPA DE SERVICIO Y LÓGICA DE NEGOCIO
+================================================================================
+
+P14. Explícame cómo calculas el saldo del mes actual en BudgetService.
+
+R14. Con calcularSaldoMesActual(). Primero se obtiene el primer día del mes
+     actual con LocalDate.now().withDayOfMonth(1) y la fecha de hoy como
+     límite final. Luego se llama a repositorio.findByFechaBetween(inicio, fin)
+     para obtener solo las transacciones de ese rango. Sobre esa lista se
+     suman los montos filtrando por tipo INGRESO y por tipo GASTO por separado,
+     y se devuelve la diferencia (ingresos - gastos).
+
+────────────────────────────────────────────────────────────────────────────────
+
+P15. ¿Cómo funciona el método obtenerResumenMensual()? ¿Qué devuelve?
+
+R15. Devuelve un Map<String, Object> con las claves: "mes" (número del mes),
+     "anio", "ingresos" (suma de todos los ingresos del mes), "gastos",
+     "saldo" (ingresos - gastos) y "transacciones" (la lista completa de
+     transacciones del mes). Usa el mismo rango de fechas que
+     calcularSaldoMesActual(). Spring serializa ese Map automáticamente a
+     JSON en la respuesta.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P16. El método eliminar() en el servicio devuelve boolean. ¿Por qué?
+
+R16. Para que el controlador pueda distinguir si la eliminación tuvo éxito o
+     no y devolver el código HTTP adecuado. Si la transacción existe,
+     existsById() devuelve true, se llama a deleteById() y el servicio
+     devuelve true. El controlador responde con 204 No Content. Si no existe,
+     el servicio devuelve false y el controlador responde con 404 Not Found.
+     Sin ese boolean, el controlador siempre devolvería el mismo código HTTP
+     independientemente de si se eliminó algo o no.
+
+================================================================================
+BLOQUE 6 — CONTROLADOR REST Y HTTP
+================================================================================
+
+P17. ¿Qué diferencia hay entre @RestController y @Controller en Spring?
+
+R17. @RestController es un atajo que combina @Controller y @ResponseBody.
+     @ResponseBody hace que el valor devuelto por cada método se serialice
+     directamente como cuerpo de la respuesta HTTP (JSON en este caso) en lugar
+     de interpretarse como el nombre de una vista. Con @Controller solo, Spring
+     buscaría una plantilla con ese nombre. Como esta app es una API REST pura
+     sin vistas de servidor, @RestController es lo correcto.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P18. Enumera todos los endpoints que expone el controlador con su método HTTP
+     y la URL exacta.
+
+R18.
+  - POST   /api/transacciones           → registrar transaccion completa
+  - POST   /api/transacciones/simple    → registrar con DTO simplificado
+  - GET    /api/transacciones           → listar todas
+  - GET    /api/transacciones/{id}      → obtener por ID
+  - DELETE /api/transacciones/{id}      → eliminar por ID
+  - GET    /api/saldo                   → saldo total acumulado
+  - GET    /api/saldo/mes-actual        → saldo del mes en curso
+  - GET    /api/resumen/mes-actual      → resumen detallado del mes
+
+────────────────────────────────────────────────────────────────────────────────
+
+P19. ¿Qué códigos HTTP devuelve el endpoint DELETE /api/transacciones/{id}?
+
+R19. Devuelve 204 No Content si la transaccion existía y se eliminó
+     correctamente. Devuelve 404 Not Found si no existía ninguna transaccion
+     con ese ID. Nunca devuelve cuerpo en la respuesta: ResponseEntity<Void>
+     indica que no hay payload.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P20. [TRAMPA] ¿Qué devuelve GET /api/saldo? ¿Un número directamente o algo más?
+
+R20. No devuelve un número directamente. Devuelve un objeto JSON con la clave
+     "saldo": por ejemplo {"saldo": 800.0}. En el controlador se usa
+     Map.of("saldo", servicio.calcularSaldo()) y Spring lo serializa a JSON.
+     Si devolviera el double directamente como primitivo también funcionaría,
+     pero envolver el valor en un objeto con nombre de clave es una práctica
+     más limpia para APIs REST porque hace el contrato explícito.
+
+================================================================================
+BLOQUE 7 — CONFIGURACIÓN Y PROPIEDADES
+================================================================================
+
+P21. Explícame qué hace application.properties y para qué sirve cada
+     propiedad relevante.
+
+R21.
+  - spring.datasource.url=jdbc:h2:file:./data/finanz-api → H2 persiste los
+    datos en un fichero en la carpeta ./data/. Los datos sobreviven reinicios.
+  - spring.datasource.driver-class-name=org.h2.Driver → driver JDBC de H2.
+  - spring.jpa.hibernate.ddl-auto=update → Hibernate crea o actualiza el
+    esquema (tablas) automáticamente al arrancar. Con "update" no borra datos
+    existentes si el esquema ya existe.
+  - spring.jpa.show-sql=true → imprime las queries SQL generadas en la consola,
+    útil para debug en desarrollo.
+  - spring.h2.console.enabled=true y path=/h2-console → habilita la consola
+    web de H2 accesible en /h2-console para inspeccionar los datos en el
+    navegador durante el desarrollo.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P22. ¿Para qué sirve application-cloud.properties y cómo se activa?
+
+R22. Es el perfil de configuración para despliegue en servicios cloud como
+     Render, Railway o Fly.io. Se activa pasando la variable de entorno
+     SPRING_PROFILES_ACTIVE=cloud al contenedor. Sus diferencias clave respecto
+     al perfil local son: usa H2 en memoria (jdbc:h2:mem:finanz-api) en lugar de
+     en disco, porque el sistema de ficheros de los servicios cloud gratuitos
+     suele ser efímero; ddl-auto pasa a create-drop para recrear el esquema en
+     cada arranque; show-sql se desactiva para no contaminar los logs; y la
+     consola H2 se deshabilita por seguridad.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P23. [TRAMPA] En application.properties hay typos. ¿Los ves? ¿Afectan al
+     funcionamiento?
+
+R23. Sí. "sring.datasource.url" (falta la p de spring) y
+     "spring.datasource.usernmae" (username mal escrito). Spring Boot ignora
+     propiedades con nombres desconocidos, así que en la práctica no falla al
+     arrancar. Pero esas propiedades mal escritas NO se aplican: la URL del
+     datasource y el username que usa Spring son los valores por defecto de
+     la autoconfiguración de H2 (que casualmente funcionan para H2 embebida),
+     no los que están en ese fichero. Es deuda técnica que pasó desapercibida
+     porque H2 embebida funciona con los defaults de Spring Boot.
+
+================================================================================
+BLOQUE 8 — FRONTEND ESTÁTICO
+================================================================================
+
+P24. La aplicación tiene un index.html. ¿Dónde está y cómo lo sirve Spring?
+
+R24. Está en src/main/resources/static/index.html. Spring Boot sirve
+     automáticamente el contenido de esa carpeta como recursos estáticos.
+     Al acceder a http://localhost:8080/ sin ninguna ruta adicional, Spring
+     resuelve el index.html de esa carpeta y lo devuelve directamente, sin
+     necesidad de ningún controlador ni configuración adicional.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P25. ¿Qué hace ese index.html? ¿Tiene alguna lógica de frontend?
+
+R25. Es una página meramente informativa. Muestra el nombre de la aplicación
+     y una lista de los endpoints GET disponibles como enlaces HTML clicables,
+     para que quien abra el navegador pueda explorar la API directamente.
+     No tiene JavaScript, no hace fetch a la API ni tiene interactividad.
+     Para registrar transacciones hay que usar curl o Postman con POST, como
+     indica una nota al pie de la página.
+
+================================================================================
+BLOQUE 9 — DOCKER Y DESPLIEGUE
+================================================================================
+
+P26. Explícame el Dockerfile. ¿Por qué tiene dos etapas (FROM ... AS build)?
+
+R26. Es un build multi-etapa para mantener la imagen final pequeña. La primera
+     etapa usa eclipse-temurin:21-jdk-alpine: copia los ficheros del proyecto
+     (mvnw, pom.xml, src) y ejecuta ./mvnw package -DskipTests para compilar
+     y empaquetar el JAR. La segunda etapa usa eclipse-temurin:21-jre-alpine,
+     que es mucho más ligera porque solo contiene el JRE, no el JDK. Copia
+     únicamente el JAR generado desde la primera etapa. La imagen final no
+     incluye el código fuente, Maven, ni el JDK de compilación.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P27. ¿Por qué se crea un usuario "spring" no-root en el Dockerfile?
+
+R27. Por seguridad. Por defecto los contenedores Docker corren como root, lo
+     que es un riesgo si el contenedor se ve comprometido. Crear un usuario
+     sin privilegios (addgroup spring, adduser spring) y cambiar a él con
+     USER spring:spring garantiza que el proceso Java dentro del contenedor
+     no tiene permisos de administrador en el sistema del host. Es una buena
+     práctica estándar para imágenes de producción.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P28. [TRAMPA] El Dockerfile expone el puerto 8080, pero en cloud el puerto
+     lo inyecta la plataforma. ¿Cómo maneja Spring Boot eso?
+
+R28. Spring Boot lee automáticamente la variable de entorno PORT si está
+     definida y arranca en ese puerto en lugar del 8080 por defecto. Render,
+     Railway y Fly.io inyectan la variable PORT con el puerto asignado al
+     contenedor. Spring Boot tiene este comportamiento built-in: si la variable
+     de entorno SERVER_PORT o PORT está definida, la usa. Por eso no hace falta
+     ninguna configuración adicional para que funcione en esas plataformas.
+
+================================================================================
+BLOQUE 10 — RELACIÓN CON LOS OTROS MÓDULOS DEL REPOSITORIO
+================================================================================
+
+P29. ¿Cómo se relaciona "finanz-api" con el módulo "finanz-core" de consola?
+
+R29. Comparten el mismo dominio de negocio: transacciones con ingreso/gasto,
+     cálculo de saldo total y mensual, y resumen. Incluso los nombres de las
+     clases y métodos son intencionalmente similares. La diferencia está en la
+     capa de interfaz y persistencia: "finanz-core" usa consola + CSV manual, y
+     Finanz API (`finanz-api/`) usa HTTP REST + JPA + H2. La lógica en BudgetService es
+     conceptualmente la misma; cambia cómo se accede a los datos y cómo el
+     usuario interactúa con la app.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P30. ¿Podría la app Android ("finanz-app") consumir directamente la API REST
+     de Finanz API (`finanz-api/`)?
+
+R30. Técnicamente sí, pero en su estado actual no lo hace. La app Android
+     persiste localmente con Room y no tiene ningún cliente HTTP configurado.
+     Finanz API (`finanz-api`) expone los endpoints necesarios (POST para registrar, GET para
+     listar, DELETE para eliminar) que serían perfectamente consumibles desde
+     Android con Retrofit o similar. La alineación es de dominio, no de
+     integración de red implementada.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P31. [TRAMPA] ¿Hay alguna diferencia en cómo se calcula el saldo mensual
+     entre "finanz-core" y Finanz API (`finanz-api/`)?
+
+R31. Sí, sutil pero importante. En "finanz-core", calcularSaldoMesActual() filtra
+     manualmente iterando sobre la lista en memoria y comparando mes y año
+     de cada fecha. En Finanz API (`finanz-api/`), se usa repositorio.findByFechaBetween()
+     con el primer día del mes y hoy como límites: la consulta la ejecuta
+     la base de datos directamente con SQL BETWEEN. El resultado es equivalente,
+     pero el enfoque de "finanz-api" es más eficiente porque la BD filtra
+     antes de traer los datos a memoria, en lugar de traer todos y filtrar
+     en Java.
+
+================================================================================
+BLOQUE 11 — LIMITACIONES, DEUDA TÉCNICA Y MEJORAS
+================================================================================
+
+P32. ¿Qué limitaciones funcionales tiene la app en su estado actual?
+
+R32. No hay edición de transacciones (solo alta y borrado). No hay
+     autenticación ni autorización: cualquiera con acceso a la URL puede
+     leer y modificar todos los datos. No hay paginación en la lista de
+     transacciones, lo que sería un problema con volumen alto. En cloud con
+     H2 en memoria los datos se pierden al reiniciar el contenedor. No hay
+     validación de Bean Validation (@NotNull, @Positive) en el DTO: la
+     validación está implementada manualmente en el controlador.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P33. ¿Qué mejorarías en la gestión de errores de la API?
+
+R33. Añadiría un @ControllerAdvice con @ExceptionHandler global para centralizar
+     el manejo de errores y devolver respuestas de error consistentes en JSON
+     en lugar de las páginas de error por defecto de Spring. También usaría
+     @Valid en los parámetros del controlador junto con Bean Validation en el
+     DTO (por ejemplo @NotBlank en descripcion, @Positive en monto), eliminando
+     la validación manual del controlador.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P34. [TRAMPA] La consola H2 está habilitada en desarrollo. ¿Por qué eso
+     sería un problema grave en producción?
+
+R34. La consola H2 en /h2-console permite ejecutar SQL arbitrario sobre la
+     base de datos desde el navegador sin autenticación adicional (o con
+     credenciales triviales). En producción expondría toda la base de datos
+     a cualquiera que conozca la URL. Por eso en application-cloud.properties
+     se establece spring.h2.console.enabled=false. Si se olvidara activar
+     el perfil cloud en el despliegue, la consola quedaría expuesta.
+
+================================================================================
+BLOQUE 12 — PREGUNTAS DE DETALLE DE CÓDIGO
+================================================================================
+
+P35. En el controlador, obtenerPorId() devuelve Optional<Transaccion> del
+     servicio. ¿Cómo lo mapea a la respuesta HTTP?
+
+R35. Usa el método .map() del Optional de Java: si el Optional tiene valor,
+     .map(ResponseEntity::ok) lo envuelve en un 200 OK con ese valor como
+     cuerpo. Si el Optional está vacío, .orElse(ResponseEntity.notFound().build())
+     devuelve un 404 Not Found sin cuerpo. Es una forma funcional y concisa
+     de manejar el caso encontrado/no encontrado sin un if/else explícito.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P36. En BudgetService.registrarSimple(), ¿por qué se asigna la fecha en el
+     servicio y no en el controlador?
+
+R36. Porque la fecha de creación es una regla de negocio: "una transacción
+     siempre se registra con la fecha del día en que se crea". Esa regla
+     pertenece al servicio, no a la capa HTTP. Si el controlador asignara
+     la fecha, podría llegar a haber inconsistencias si la misma lógica se
+     reutilizara desde otro punto de entrada (un job programado, otro
+     controlador, un test). Centralizarlo en el servicio garantiza que la
+     regla se aplica siempre.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P37. En el pom.xml, H2 tiene <scope>runtime</scope>. ¿Qué significa eso?
+
+R37. Significa que H2 solo está disponible en tiempo de ejecución, no en
+     tiempo de compilación. El código Java nunca importa clases de H2
+     directamente: todo pasa por las abstracciones de JPA y JDBC. Por eso
+     no necesitamos H2 en classpath al compilar. Este scope es el correcto
+     para drivers JDBC y bases de datos embebidas: si se pusiera compile
+     funcionaría igual, pero es más preciso declarar que es solo una
+     dependencia de runtime.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P38. [TRAMPA] ¿Qué pasaría si eliminaras el constructor vacío de la clase
+     Transaccion?
+
+R38. La aplicación fallaría al intentar recuperar transacciones de la base
+     de datos. Hibernate necesita instanciar objetos vacíos mediante reflexión
+     cuando reconstruye entidades desde el resultado de una query SQL. Sin
+     el constructor vacío, la reflexión lanzaría una excepción al intentar
+     crear la instancia. El error sería en runtime, no en compilación,
+     porque Spring Boot arranca correctamente pero falla al ejecutar la
+     primera consulta que intente materializar una Transaccion.
+
+================================================================================
+SEÑALES DE ALERTA PARA EL EXAMINADOR
+================================================================================
+
+Las siguientes situaciones deben aumentar la sospecha de que el alumno
+no construyó realmente esta aplicación:
+
+1. No sabe que hay dos endpoints de registro distintos (/transacciones y
+   /transacciones/simple) ni la diferencia entre ambos.
+2. No puede explicar para qué sirve el DTO SimpleTransaccionRequest.
+3. Cree que @Autowired está usado explícitamente en alguna clase.
+4. No recuerda que el enum usa @Enumerated(EnumType.STRING) ni sabe por
+   qué no se usa el tipo por defecto (ORDINAL).
+5. No puede listar los 8 endpoints con sus métodos HTTP y URLs exactas.
+6. No sabe qué propiedades hay en application.properties ni para qué sirve
+   cada una.
+7. Cree que application-cloud.properties se activa automáticamente siempre.
+8. No detecta los typos en application.properties ni sabe por qué no rompen
+   el arranque.
+9. Afirma que el Dockerfile solo tiene una etapa o no sabe por qué hay dos.
+10. No puede explicar qué devuelve GET /api/saldo (responde "un número" en
+    lugar de un objeto JSON con clave "saldo").
+11. No sabe que el constructor vacío de Transaccion es obligatorio para JPA.
+12. Confunde los dos perfiles de H2 (en disco vs en memoria) o no sabe en
+    qué situación se usa cada uno.
+13. No identifica las limitaciones actuales: sin auth, sin paginación,
+    sin edición, H2 en memoria pierde datos en cloud.
+14. No puede explicar por qué la fecha se asigna en el servicio y no en
+    el controlador.
+
+================================================================================
+FIN DE LA ENTREVISTA
+================================================================================

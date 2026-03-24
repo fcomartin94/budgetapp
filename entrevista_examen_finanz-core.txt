@@ -1,0 +1,516 @@
+================================================================================
+  Proyecto: Finanz Core (Java puro, sin frameworks)
+  Nivel: Profundo — Verificación de autoría y comprensión técnica
+================================================================================
+
+INSTRUCCIONES AL EXAMINADOR
+────────────────────────────
+Las preguntas están agrupadas por bloques temáticos. Cada una incluye la
+respuesta esperada de un alumno que realmente construyó la aplicación.
+Una respuesta vaga o memorizada sin detalle técnico debe considerarse señal
+de alerta. Se recomienda seguir la entrevista de forma no lineal, saltando
+entre bloques, para verificar que el conocimiento es consistente.
+
+================================================================================
+BLOQUE 1 — VISIÓN GENERAL Y CONTEXTO DEL PROYECTO
+================================================================================
+
+P1. Descríbeme la aplicación en dos o tres frases, como si me la explicaras
+    a alguien que no sabe programar.
+
+R1. Es una aplicación de consola escrita en Java que te permite llevar un
+    registro de tus ingresos y gastos personales. Puedes añadir movimientos,
+    ver un resumen mensual, consultar tu saldo y eliminar transacciones.
+    Los datos se guardan en un archivo CSV para que persistan entre sesiones.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P2. ¿Por qué elegiste Java puro, sin usar ningún framework o gestor de
+    dependencias como Maven o Gradle?
+
+R2. Fue una decisión deliberada para centrar el trabajo en los fundamentos:
+    arquitectura en capas, separación de responsabilidades, persistencia manual
+    y tests sin dependencias externas. Usar Maven o Spring Boot habría añadido
+    complejidad que no aportaba valor al objetivo pedagógico. También demuestra
+    que soy capaz de construir una aplicación funcional sin apoyarme en magia
+    del framework.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P3. El README menciona que este módulo "finanz-core" tiene relación con una Finanz API (módulo `finanz-api`)
+    y un "finanz-app". ¿Qué relación tienen y cuál es el rol de este módulo
+    dentro del conjunto?
+
+R3. "finanz-core" es la base del dominio: contiene el modelo, la lógica de negocio y
+    la persistencia. Finanz API (`finanz-api`) expone ese mismo dominio mediante HTTP (sería
+    la versión API REST). "finanz-app" es una interfaz móvil simplificada para
+    registrar movimientos. Este módulo es el núcleo compartido: toda la lógica
+    de negocio nace aquí. Las otras capas son interfaces distintas sobre el
+    mismo dominio.
+
+================================================================================
+BLOQUE 2 — ARQUITECTURA EN CAPAS
+================================================================================
+
+P4. Explícame la estructura de carpetas del proyecto y qué responsabilidad
+    tiene cada paquete.
+
+R4.
+  - model/     → Entidades del dominio: Transaccion y TipoTransaccion.
+                  No tienen lógica de negocio, solo datos y sus getters/setters.
+  - repository/ → Persistencia: lee y escribe en el CSV. Solo sabe de ficheros,
+                  no de reglas de negocio.
+  - service/   → BudgetService: contiene las reglas de negocio (calcular saldo,
+                  filtrar por mes, registrar). No sabe nada de CSV ni de consola.
+  - ui/        → ConsolaMenu: interacción con el usuario por teclado y pantalla.
+                  Solo delega en el servicio; no contiene lógica de cálculo.
+  - util/      → MoneyFormatter: formateador monetario reutilizable en toda la app.
+  - test/      → Tests unitarios con runner propio, sin JUnit.
+  - Main.java  → Punto de entrada: compone las dependencias (DI manual) y arranca.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P5. ¿Qué significa que "cada capa solo conoce a la capa inmediatamente por
+    debajo de ella"? Dame un ejemplo concreto de tu código.
+
+R5. Significa que ConsolaMenu (UI) habla con BudgetService (servicio), pero
+    nunca accede directamente a TransaccionRepository. BudgetService conoce
+    al repositorio, pero no sabe que existe una consola. El repositorio no
+    sabe nada de nada salvo de ficheros y objetos Transaccion.
+    Ejemplo concreto: en ConsolaMenu.java, el único campo inyectado es
+    "private final BudgetService servicio;". No hay ninguna referencia a
+    TransaccionRepository en ese fichero.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P6. ¿Cómo se conectan las capas entre sí? ¿Dónde se instancian los objetos?
+
+R6. En Main.java, de forma manual (inyección de dependencias sin contenedor):
+      TransaccionRepository repositorio = new TransaccionRepository();
+      BudgetService servicio = new BudgetService(repositorio);
+      ConsolaMenu menu = new ConsolaMenu(servicio);
+    Cada capa recibe su dependencia por constructor. Esto se llama inyección
+    de dependencias por constructor. El único lugar que conoce toda la cadena
+    es Main, que actúa como "raíz de composición" (composition root).
+
+────────────────────────────────────────────────────────────────────────────────
+
+P7. ¿Qué ventaja tiene pasar las dependencias por constructor en lugar de
+    crearlas directamente dentro de la clase?
+
+R7. Tres ventajas principales:
+    1. Testabilidad: en los tests puedo inyectar un repositorio que apunta a
+       un CSV temporal, sin tocar el CSV de producción.
+    2. Desacoplamiento: la clase no controla cómo se construyen sus dependencias,
+       lo que facilita cambiarlas sin modificar la clase.
+    3. Claridad: el constructor explicita qué necesita la clase para funcionar.
+    Si BudgetService creara internamente "new TransaccionRepository()", sería
+    imposible testearlo de forma aislada.
+
+================================================================================
+BLOQUE 3 — MODELO DE DOMINIO
+================================================================================
+
+P8. ¿Qué campos tiene la entidad Transaccion y por qué elegiste esos tipos
+    concretos para cada campo?
+
+R8.
+  - id: int     → Identificador único incremental; int es suficiente para el
+                   volumen de datos esperado en una app personal.
+  - descripcion: String → Texto libre, sin restricción de longitud.
+  - monto: double → Valor monetario. En un sistema real usaría BigDecimal para
+                    evitar errores de punto flotante, pero para este alcance
+                    double es aceptable.
+  - tipo: TipoTransaccion → Enum con valores INGRESO y GASTO. Usar un enum
+                    en lugar de un String evita valores inválidos en tiempo
+                    de compilación.
+  - fecha: LocalDate → Representa una fecha sin hora ni zona horaria, que es
+                    exactamente lo que necesitamos. LocalDate es la clase
+                    correcta de java.time para este uso.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P9. ¿Por qué TipoTransaccion es un enum y no, por ejemplo, un boolean o
+    un String?
+
+R9. Con un enum el compilador garantiza que solo existen los valores INGRESO
+    y GASTO. Un boolean sería ambiguo (¿true es ingreso o gasto?). Un String
+    permitiría valores inválidos como "ingresoo" o "GASTO " (con espacio).
+    Además, el enum se serializa y deserializa trivialmente con valueOf() y
+    name(), lo que encaja perfectamente con la persistencia CSV.
+
+================================================================================
+BLOQUE 4 — PERSISTENCIA CSV
+================================================================================
+
+P10. Explícame exactamente cómo funciona la persistencia CSV en tu repositorio.
+     ¿Cuándo se lee del fichero y cuándo se escribe?
+
+R10. Se lee UNA SOLA VEZ al construir el repositorio, en cargarDesdeArchivo().
+     Ese método carga todas las líneas del CSV en la lista en memoria
+     (this.transacciones) y ajusta el contadorId al máximo ID encontrado + 1.
+     Se escribe CADA VEZ que hay un cambio (guardar o eliminar), llamando a
+     guardarEnArchivo(), que sobreescribe el fichero completo con el estado
+     actual de la lista en memoria. Es una estrategia "write-through" simple:
+     memoria y disco siempre están sincronizados tras cada operación.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P11. ¿Por qué al guardar reescribes el fichero entero en lugar de hacer
+     un append al final?
+
+R11. Porque también necesito soportar la eliminación de transacciones. Si solo
+     hiciera append, no habría forma simple de "deshacer" una línea ya escrita.
+     Al reescribir el fichero completo desde la lista en memoria, tanto el alta
+     como el borrado producen un CSV coherente. El coste es aceptable dado el
+     volumen de datos de una app personal.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P12. ¿Qué formato tiene cada línea del CSV? Dime los campos en orden.
+
+R12. id,descripcion,monto,tipo,fecha
+     Ejemplo: 3,Supermercado,87.50,GASTO,2026-03-10
+     El separador es la coma. La fecha usa el formato ISO-8601 (yyyy-MM-dd),
+     que es el que produce LocalDate.toString() y acepta LocalDate.parse().
+
+────────────────────────────────────────────────────────────────────────────────
+
+P13. ¿Qué problema existe si la descripción contiene una coma? ¿Cómo lo
+     resuelves?
+
+R13. Rompería el parseo, porque al hacer split(",") el campo descripción
+     se partiría en varios fragmentos y los índices de los campos siguientes
+     quedarían desplazados. Lo resuelvo reemplazando las comas de la descripción
+     por un espacio antes de escribir:
+       String descripcion = t.getDescripcion().replace(",", " ");
+     Es una solución pragmática para un CSV simple. En un sistema de producción
+     usaría comillas para escapar los campos o una librería CSV robusta.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P14. ¿Qué hace tu código si el fichero CSV contiene una línea mal formada?
+
+R14. En cargarDesdeArchivo(), antes de parsear compruebo que el array resultante
+     del split tenga al menos 5 elementos:
+       if (partes.length < 5) { continue; }
+     Si tiene menos, la línea se descarta silenciosamente. Si tiene 5 o más,
+     se parsean solo los primeros 5 campos, ignorando cualquier columna extra.
+     Esto lo pruebo explícitamente en TransaccionRepositoryTest, en el test
+     "testCargaSoportaCsvAntiguoConColumnasExtra", donde escribo una línea con
+     7 campos y verifico que se carga correctamente con los 5 válidos.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P15. ¿Cómo gestionas el contador de IDs al cargar el fichero?
+
+R15. Durante la carga, por cada línea válida comparo el id leído con contadorId:
+       if (id >= contadorId) { contadorId = id + 1; }
+     Así, tras cargar, contadorId siempre apunta al siguiente ID libre. Si el
+     fichero tiene IDs 1, 2 y 5, el contador quedará en 6. Esto garantiza que
+     no se reutilicen IDs aunque el fichero tenga huecos por borrados anteriores.
+
+================================================================================
+BLOQUE 5 — LÓGICA DE NEGOCIO (BudgetService)
+================================================================================
+
+P16. ¿Qué operaciones expone BudgetService y qué hace cada una?
+
+R16.
+  - registrarTransaccion(descripcion, monto, tipo): crea un objeto Transaccion
+    con la fecha actual y lo delega al repositorio para que lo persista.
+  - obtenerTodas(): devuelve la lista completa de transacciones desde el repo.
+  - calcularSaldo(): suma ingresos y resta gastos de todas las transacciones.
+  - calcularSaldoMesActual(): igual que calcularSaldo pero filtrando solo las
+    transacciones cuyo año y mes coincidan con el mes actual.
+  - mostrarResumenMensual(): agrupa las transacciones por mes, calcula totales
+    de ingresos, gastos y saldo de cada mes, y los imprime por consola.
+  - eliminarTransaccion(id): delega en el repositorio y devuelve true/false.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P17. ¿Cómo implementas el filtro "solo mes actual" en calcularSaldoMesActual?
+
+R17. Obtengo la fecha de hoy con LocalDate.now() y comparo año y mes de cada
+     transacción:
+       LocalDate hoy = LocalDate.now();
+       transacciones.stream()
+         .filter(t -> t.getFecha().getYear() == hoy.getYear()
+                   && t.getFecha().getMonthValue() == hoy.getMonthValue())
+     Uso getYear() y getMonthValue() en lugar de comparar el objeto completo
+     porque quiero solo año+mes, no el día exacto.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P18. ¿Por qué calcularSaldo usa un stream con reduce o sum en lugar de un
+     simple bucle for?
+
+R18. Por expresividad y concisión. Con streams puedo expresar la intención
+     directamente: "filtra los ingresos, suma sus montos, resta los gastos".
+     Un bucle for requeriría más líneas y variables intermedias. En Java 8+
+     los streams son la forma idiomática de procesar colecciones.
+     Internamente el rendimiento es equivalente para el volumen de datos de
+     esta aplicación.
+
+================================================================================
+BLOQUE 6 — INTERFAZ DE USUARIO (ConsolaMenu)
+================================================================================
+
+P19. ¿Cómo validas la entrada del usuario en los campos numéricos?
+     Muéstrame el flujo exacto.
+
+R19. Uso un bucle while(true) que captura NumberFormatException:
+       private int leerEntero(String mensaje) {
+           while (true) {
+               try {
+                   System.out.print(mensaje);
+                   return Integer.parseInt(scanner.nextLine().trim());
+               } catch (NumberFormatException e) {
+                   System.out.println("Por favor, ingrese un numero entero valido.");
+               }
+           }
+       }
+     Si el usuario escribe "abc", parseInt lanza la excepción, se informa
+     al usuario y el bucle repite la pregunta. Solo se sale del bucle cuando
+     el parseo tiene éxito. Para decimales hay un método análogo (leerDecimal)
+     que además reemplaza ',' por '.' antes de parsear, para aceptar
+     la convención española.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P20. ¿Por qué usas scanner.nextLine() en lugar de scanner.nextInt() o
+     scanner.nextDouble() directamente?
+
+R20. Porque nextInt() y nextDouble() dejan el carácter de nueva línea (\n) en
+     el buffer del Scanner. Eso causa que la siguiente llamada a nextLine()
+     devuelva una cadena vacía, lo que genera bugs difíciles de rastrear.
+     Usando siempre nextLine() consumo la línea completa incluyendo el \n,
+     y luego parseo manualmente el String obtenido. Es la práctica más segura
+     con Scanner en aplicaciones interactivas.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P21. ¿Por qué cierras el Scanner al salir del programa?
+
+R21. Para liberar el recurso del sistema asociado a System.in. Aunque en una
+     app de consola el SO liberaría el recurso al terminar el proceso, cerrar
+     explícitamente el Scanner es la práctica correcta en Java: evita warnings
+     de recursos no cerrados y sería crítico en entornos donde el Scanner
+     no está asociado a System.in sino a un fichero u otro stream.
+
+================================================================================
+BLOQUE 7 — UTILIDADES Y FORMATO MONETARIO
+================================================================================
+
+P22. ¿Qué hace MoneyFormatter y por qué está en un paquete util separado?
+
+R22. MoneyFormatter expone un método estático format(double monto) que formatea
+     un número como moneda española (locale "es-ES") con el símbolo del euro.
+     Por ejemplo, 1234.5 → "1.234,50 €".
+     Está en un paquete util separado porque es una utilidad transversal: tanto
+     ConsolaMenu como BudgetService pueden necesitarla sin crear dependencias
+     entre sí. Si estuviera dentro de ConsolaMenu, el servicio no podría usarla
+     sin depender de la capa de UI, lo que violaría la jerarquía de capas.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P23. ¿Qué clase de Java usas internamente para formatear la moneda?
+
+R23. NumberFormat.getCurrencyInstance(new Locale("es", "ES")) del paquete
+     java.text. Esto devuelve un formateador configurado para el locale
+     español: separador de miles con punto, decimales con coma, símbolo €.
+
+================================================================================
+BLOQUE 8 — TESTING
+================================================================================
+
+P24. No usas JUnit. ¿Cómo funciona tu sistema de tests?
+
+R24. Hay cuatro clases:
+  - TestAssertions: métodos estáticos de aserción (assertTrue, assertEquals
+    para int, double con delta, y Object). Si falla, lanzan AssertionError.
+  - TestUtils: utilidades para tests (generar path de CSV temporal con UUID,
+    borrar el fichero temporal).
+  - BudgetServiceTest y TransaccionRepositoryTest: clases con método runAll()
+    estático que ejecuta los casos de prueba.
+  - TestRunner: main() que llama a runAll() de cada suite en un try/catch.
+    Si lanza cualquier Throwable, cuenta un fallo. Al final imprime el resumen
+    y termina con System.exit(1) si hubo fallos.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P25. ¿Por qué en los tests usas un CSV temporal con UUID en lugar del fichero
+     "transacciones.csv" de producción?
+
+R25. Para que los tests sean aislados e independientes entre sí y del estado
+     del sistema. Si usara el fichero de producción:
+     1. Un test podría afectar a otro si dejan datos residuales.
+     2. Los datos del usuario real podrían corromperse durante la ejecución
+        de los tests.
+     Usando UUID.randomUUID() garantizo que cada test tiene su propio fichero
+     único. El bloque finally asegura que siempre se borra, aunque el test falle.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P26. Explícame el test "testSaldoMesActualSoloCuentaMesActual". ¿Qué verifica
+     exactamente y por qué es importante?
+
+R26. Inserta tres transacciones: dos del mes actual (ingreso 1000, gasto 300)
+     y una del mes anterior (gasto 999). Luego verifica que calcularSaldoMesActual()
+     devuelve 700, no -299. Esto confirma que el filtro por mes funciona
+     correctamente y que los movimientos de otros meses no contaminan el saldo
+     mensual. Es un test de regresión importante porque ese bug (no filtrar
+     por mes) sería fácil de introducir accidentalmente.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P27. ¿Qué verifica el test "testCargaSoportaCsvAntiguoConColumnasExtra"?
+
+R27. Que el repositorio puede leer un CSV con más de 5 columnas sin romperse.
+     Simula un escenario de migración: imagina que una versión anterior del
+     software guardaba columnas extra (categoría, presupuesto...). El test
+     escribe una línea con 7 campos y verifica que el repositorio carga
+     correctamente los 5 primeros, ignorando el resto. Esto garantiza
+     compatibilidad hacia atrás con ficheros de versiones anteriores.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P28. ¿Por qué TestAssertions.assertEquals para double tiene un parámetro
+     "delta" y no compara directamente con ==?
+
+R28. Porque los doubles en Java (y en cualquier lenguaje con punto flotante IEEE
+     754) pueden acumular errores de precisión. Por ejemplo, 1200.0 - 200.5
+     puede no dar exactamente 999.5 en binario flotante. Usando un delta de
+     0.0001, acepto cualquier resultado que esté dentro de esa tolerancia.
+     Comparar doubles con == en tests es una fuente habitual de falsos negativos.
+
+================================================================================
+BLOQUE 9 — DECISIONES DE DISEÑO Y ALTERNATIVAS
+================================================================================
+
+P29. ¿Por qué elegiste double para el monto en lugar de BigDecimal?
+
+R29. Es una concesión pragmática al alcance del proyecto. BigDecimal es la
+     elección correcta en sistemas financieros reales porque evita errores de
+     redondeo (0.1 + 0.2 ≠ 0.3 en punto flotante). Para una app personal de
+     consola donde los cálculos son simples y los montos no tienen más de dos
+     decimales, los errores de double son despreciables. Si el proyecto
+     escalara, migraría a BigDecimal con ROUND_HALF_UP.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P30. No implementaste la edición de transacciones. ¿Por qué? ¿Cómo la
+     añadirías si te lo pidieran?
+
+R30. Decidí no incluirla porque el flujo de alta + borrado es suficiente para
+     corregir errores (borro el movimiento incorrecto y añado el correcto) y
+     añadir edición habría complejidad adicional sin un valor pedagógico claro
+     para este módulo.
+     Para implementarla añadiría en BudgetService:
+       public boolean editarTransaccion(int id, String desc, double monto, TipoTransaccion tipo)
+     Que buscaría la transacción por ID, actualizaría sus campos y llamaría
+     a un método repo.actualizar(transaccion) que reescribiría el CSV completo
+     (el mismo patrón que el borrado).
+
+────────────────────────────────────────────────────────────────────────────────
+
+P31. ¿Qué problema tiene tu implementación si dos instancias de la aplicación
+     se ejecutaran simultáneamente sobre el mismo CSV?
+
+R31. Condición de carrera (race condition). Si dos instancias leen el CSV,
+     modifican su lista en memoria y luego escriben, la última en escribir
+     sobreescribe los cambios de la primera. No hay ningún mecanismo de
+     bloqueo de fichero ni de sincronización.
+     Soluciones posibles: FileLock de Java NIO para bloquear el fichero
+     durante escritura, o migrar a una base de datos como SQLite que gestiona
+     la concurrencia internamente.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P32. ¿Por qué ConsolaMenu tiene "private final BudgetService servicio" y no
+     simplemente "private BudgetService servicio"? ¿Qué aporta el final?
+
+R32. El modificador final garantiza que la referencia no puede reasignarse
+     después de que el constructor termine. Esto hace la clase más segura:
+     el servicio inyectado es siempre el mismo durante toda la vida del objeto.
+     Es una buena práctica para dependencias obligatorias: expresa la intención
+     de que "este objeto necesita un servicio y no va a cambiarlo". También
+     facilita la revisión de código porque los revisores saben que ese campo
+     no cambia después de la construcción.
+
+================================================================================
+BLOQUE 10 — PREGUNTAS DE DETALLE DE CÓDIGO
+================================================================================
+
+P33. En el switch de ConsolaMenu.iniciar(), usas la sintaxis "case 1 -> ..."
+     en lugar de "case 1: ... break;". ¿Qué es esto y desde qué versión
+     de Java está disponible?
+
+R33. Son las "switch expressions" o switch con expresiones de flecha (arrow
+     case labels), introducidas como preview en Java 12 y estabilizadas en
+     Java 14. La ventaja principal es que no tienen "fall-through": no hace
+     falta el break y cada rama es independiente. El código es más limpio y
+     menos propenso a bugs por olvidar un break.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P34. En mostrarTodasLasTransacciones() usas "var" para declarar variables.
+     ¿Qué es var en Java y cuándo es apropiado usarlo?
+
+R34. var es inferencia de tipo local, disponible desde Java 10. El compilador
+     infiere el tipo de la variable a partir del lado derecho de la asignación.
+     Es apropiado cuando el tipo es obvio del contexto y su escritura explícita
+     no añadiría información:
+       var todas = servicio.obtenerTodas();  // Claramente List<Transaccion>
+       for (var transaccion : todas) { ... } // Claramente Transaccion
+     No sería apropiado si oscurece el tipo: var x = obj.metodoOpaco() podría
+     hacer el código menos legible si el tipo devuelto no es evidente.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P35. En TransaccionRepository usas try-with-resources para los streams de
+     fichero. ¿Qué garantiza esto?
+
+R35. El bloque try-with-resources garantiza que el recurso declarado en el
+     paréntesis (BufferedWriter o BufferedReader) se cierra automáticamente
+     al salir del bloque, tanto si la ejecución termina normalmente como si
+     se lanza una excepción. Es equivalente a un try-finally manual, pero
+     más conciso y seguro. Sin esto, si ocurriera una IOException durante
+     la escritura, el fichero quedaría abierto hasta que el GC finalizara
+     el objeto, lo que podría causar pérdida de datos o locks en el SO.
+
+────────────────────────────────────────────────────────────────────────────────
+
+P36. ¿Por qué obtenerTodas() en el repositorio devuelve "new ArrayList<>(transacciones)"
+     en lugar de devolver directamente "this.transacciones"?
+
+R36. Para proteger el estado interno del repositorio. Si devolviera la lista
+     original, cualquier código externo podría modificarla directamente
+     (añadir, borrar elementos) sin pasar por los métodos del repositorio,
+     saltándose la lógica de persistencia. Al devolver una copia defensiva
+     (new ArrayList<>), el repositorio garantiza que su lista interna solo
+     se modifica a través de guardar() y eliminar(). Es el principio de
+     encapsulamiento aplicado a las colecciones.
+
+================================================================================
+SEÑALES DE ALERTA PARA EL EXAMINADOR
+================================================================================
+
+Las siguientes situaciones deben aumentar la sospecha de que el alumno
+no construyó la aplicación:
+
+1. No sabe el nombre exacto de las clases o los paquetes sin mirar.
+2. Confunde las responsabilidades de las capas (p.ej. cree que ConsolaMenu
+   escribe en el CSV directamente).
+3. No puede explicar por qué el repositorio devuelve una copia de la lista.
+4. No sabe qué hace el bloque finally en los tests.
+5. No puede explicar el problema del scanner.nextLine() vs scanner.nextInt().
+6. Describe el formato CSV de forma incorrecta (campos en orden equivocado).
+7. No sabe qué versión de Java introduce las arrow cases del switch.
+8. Cree que BudgetService accede directamente al fichero.
+9. No puede explicar qué pasaría si la descripción tuviera una coma.
+10. No recuerda que el contadorId se ajusta durante la carga del CSV.
+
+================================================================================
+FIN DE LA ENTREVISTA
+================================================================================
