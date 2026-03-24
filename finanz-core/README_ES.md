@@ -4,22 +4,28 @@ Aplicacion de presupuesto personal en consola construida con Java puro, sin fram
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/fcomartin94/finanz-core)
 
-Si buscas una version corta y orientada a portfolio/demo, revisa `OVERVIEW_ES.md`.
-
 ---
 
 ## Indice
 
-- [1. Estado actual](#1-estado-actual)
-- [2. Funcionalidades](#2-funcionalidades)
-- [3. Arquitectura tecnica](#3-arquitectura-tecnica)
-- [4. Modelo de dominio](#4-modelo-de-dominio)
-- [5. Persistencia CSV](#5-persistencia-csv)
-- [6. Manual de uso](#6-manual-de-uso)
-- [7. Compilacion y ejecucion](#7-compilacion-y-ejecucion)
-- [8. Consideraciones tecnicas](#8-consideraciones-tecnicas)
-- [9. Relacion con Finanz API y Finanz App](#9-relacion-con-finanz-api-y-finanz-app)
-- [10. Roadmap recomendado](#10-roadmap-recomendado)
+- [Finanz Core (`finanz-core/`)](#finanz-core-finanz-core)
+  - [Indice](#indice)
+  - [1. Estado actual](#1-estado-actual)
+  - [2. Funcionalidades](#2-funcionalidades)
+  - [3. Arquitectura tecnica](#3-arquitectura-tecnica)
+  - [4. Modelo de dominio](#4-modelo-de-dominio)
+    - [`TipoTransaccion`](#tipotransaccion)
+    - [`Transaccion`](#transaccion)
+  - [5. Persistencia CSV](#5-persistencia-csv)
+  - [6. Manual de uso](#6-manual-de-uso)
+    - [Menu principal](#menu-principal)
+    - [Flujo recomendado](#flujo-recomendado)
+    - [Validaciones de entrada](#validaciones-de-entrada)
+  - [7. Compilacion y ejecucion](#7-compilacion-y-ejecucion)
+    - [Ejecutar tests unitarios](#ejecutar-tests-unitarios)
+  - [8. Consideraciones tecnicas](#8-consideraciones-tecnicas)
+  - [9. Relacion con Finanz API y Finanz App](#9-relacion-con-finanz-api-y-finanz-app)
+  - [10. Roadmap recomendado](#10-roadmap-recomendado)
 
 ---
 

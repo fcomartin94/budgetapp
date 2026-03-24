@@ -4,18 +4,18 @@ API REST para gestion de presupuesto personal construida con Spring Boot, Spring
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/fcomartin94/finanz-core)
 
-Si buscas una version corta y orientada a portfolio/demo, revisa `OVERVIEW_ES.md`.
-
 ---
 
 ## Indice
 
-- [1. Estado actual](#1-estado-actual)
-- [2. Ejecucion rapida](#2-ejecucion-rapida)
-- [3. Endpoints principales](#3-endpoints-principales)
-- [4. Estructura tecnica](#4-estructura-tecnica)
-- [5. Configuracion](#5-configuracion)
-- [6. Relacion con el monorepo](#6-relacion-con-el-monorepo)
+- [Finanz API (`finanz-api/`)](#finanz-api-finanz-api)
+  - [Indice](#indice)
+  - [1. Estado actual](#1-estado-actual)
+  - [2. Ejecucion rapida](#2-ejecucion-rapida)
+  - [3. Endpoints principales](#3-endpoints-principales)
+  - [4. Estructura tecnica](#4-estructura-tecnica)
+  - [5. Configuracion](#5-configuracion)
+  - [6. Relacion con el monorepo](#6-relacion-con-el-monorepo)
 
 ---
 

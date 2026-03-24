@@ -2,24 +2,36 @@
 
 Aplicacion Android nativa para control financiero personal, desarrollada con Kotlin, Jetpack Compose y Room.
 
-Si buscas una version corta y orientada a portfolio/demo, revisa `OVERVIEW_ES.md`.
-
 ---
 
 ## Indice
 
-- [1. Estado real actual](#1-estado-real-actual)
-- [2. Vision funcional](#2-vision-funcional)
-- [3. Stack tecnico](#3-stack-tecnico)
-- [4. Arquitectura de la app](#4-arquitectura-de-la-app)
-- [5. Modelo de datos y persistencia](#5-modelo-de-datos-y-persistencia)
-- [6. Navegacion y pantallas](#6-navegacion-y-pantallas)
-- [7. Manual de uso](#7-manual-de-uso)
-- [8. Comportamiento responsive y UI](#8-comportamiento-responsive-y-ui)
-- [9. Compilacion e instalacion](#9-compilacion-e-instalacion)
-- [10. Limitaciones actuales](#10-limitaciones-actuales)
-- [11. Relacion con `finanz-core` y `finanz-api`](#11-relacion-con-finanz-core-y-finanz-api)
-- [12. Roadmap recomendado](#12-roadmap-recomendado)
+- [Finanz App (`finanz-app/`)](#finanz-app-finanz-app)
+  - [Indice](#indice)
+  - [1. Estado real actual](#1-estado-real-actual)
+  - [2. Vision funcional](#2-vision-funcional)
+  - [3. Stack tecnico](#3-stack-tecnico)
+  - [4. Arquitectura de la app](#4-arquitectura-de-la-app)
+  - [5. Modelo de datos y persistencia](#5-modelo-de-datos-y-persistencia)
+    - [Entidad principal `Transaccion`](#entidad-principal-transaccion)
+    - [Categoria](#categoria)
+    - [DAO](#dao)
+  - [6. Navegacion y pantallas](#6-navegacion-y-pantallas)
+    - [Home](#home)
+    - [Transacciones](#transacciones)
+    - [Resumen](#resumen)
+  - [7. Manual de uso](#7-manual-de-uso)
+    - [7.1 Registrar un movimiento](#71-registrar-un-movimiento)
+    - [7.2 Consultar salud financiera](#72-consultar-salud-financiera)
+    - [7.3 Corregir datos](#73-corregir-datos)
+  - [8. Comportamiento responsive y UI](#8-comportamiento-responsive-y-ui)
+  - [9. Compilacion e instalacion](#9-compilacion-e-instalacion)
+    - [Requisitos](#requisitos)
+    - [Ejecutar desde Android Studio](#ejecutar-desde-android-studio)
+    - [Generar APK debug](#generar-apk-debug)
+  - [10. Limitaciones actuales](#10-limitaciones-actuales)
+  - [11. Relacion con `finanz-core` y `finanz-api`](#11-relacion-con-finanz-core-y-finanz-api)
+  - [12. Roadmap recomendado](#12-roadmap-recomendado)
 
 ---
 
