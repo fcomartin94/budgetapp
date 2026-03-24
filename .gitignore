@@ -1,0 +1,8 @@
+.DS_Store
+**/.DS_Store
+**/*.class
+**/.idea/
+**/local.properties
+finanz-api/target/
+finanz-app/.gradle/
+finanz-app/app/build/
