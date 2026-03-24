@@ -2,7 +2,7 @@
 
 Aplicacion Android nativa para control financiero personal, desarrollada con Kotlin, Jetpack Compose y Room.
 
-Si buscas una version corta y orientada a portfolio/demo, revisa `README_PUBLIC_ES.md`.
+Si buscas una version corta y orientada a portfolio/demo, revisa `OVERVIEW_ES.md`.
 
 ---
 

@@ -4,7 +4,7 @@ API REST para gestion de presupuesto personal construida con Spring Boot, Spring
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/fcomartin94/finanz-core)
 
-Si buscas una version corta y orientada a portfolio/demo, revisa `README_PUBLIC_ES.md`.
+Si buscas una version corta y orientada a portfolio/demo, revisa `OVERVIEW_ES.md`.
 
 ---
 

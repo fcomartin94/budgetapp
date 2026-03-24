@@ -117,7 +117,7 @@ Archivos necesarios: `.devcontainer/devcontainer.json` (ya incluido).
 
 ## Añadir la URL al README
 
-Una vez desplegado, actualiza tu `README_ES.md` o `README_PUBLIC_ES.md` con algo como:
+Una vez desplegado, actualiza tu `README_ES.md` o `OVERVIEW_ES.md` con algo como:
 
 ```markdown
 ## 🌐 API en vivo

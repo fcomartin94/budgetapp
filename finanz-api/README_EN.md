@@ -4,7 +4,7 @@ REST API for personal budget management built with Spring Boot, Spring Data JPA 
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/fcomartin94/finanz-core)
 
-If you're looking for a short, portfolio/demo-oriented version, check out `README_PUBLIC_ES.md`.
+If you're looking for a short, portfolio/demo-oriented version, check out `OVERVIEW_ES.md`.
 
 ---
 
