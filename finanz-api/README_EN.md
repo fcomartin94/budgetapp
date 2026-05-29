@@ -78,7 +78,7 @@ finanz-api/src/main/java/com/finanzapi/
 
 - Local profile: `src/main/resources/application.properties`
 - Cloud profile: `src/main/resources/application-cloud.properties`
-- Deployment guide: `DEPLOY_ES.md`
+- Deployment guide: [`DEPLOY_EN.md`](DEPLOY_EN.md)
 
 ## 6. Relationship with the monorepo
 

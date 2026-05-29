@@ -13,6 +13,15 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+/**
+ * Immutable UI state snapshot consumed by all Compose screens.
+ *
+ * @property transacciones the full transaction list for the current session
+ * @property saldoTotal     all-time net balance (income − expenses)
+ * @property saldoMesActual net balance for the current calendar month
+ * @property resumenMensual aggregated monthly figures (income, expenses, ratio)
+ * @property isLoading      true while an async operation is in progress
+ */
 data class UiState(
     val transacciones: List<com.finanzapp.data.model.Transaccion> = emptyList(),
     val saldoTotal: Double = 0.0,
@@ -21,12 +30,31 @@ data class UiState(
     val isLoading: Boolean = false
 )
 
+/**
+ * ViewModel for the FinanzApp budget screens.
+ *
+ * Exposes a single [uiState] [StateFlow] that Compose screens collect.
+ * All writes go through [BudgetService] and any Room change triggers a
+ * reactive recalculation of balances.
+ *
+ * ## Data flow
+ * ```
+ * Room (Flow) → TransaccionRepository → BudgetService → UiState → Compose UI
+ * ```
+ *
+ * ## Lifecycle
+ * The ViewModel survives configuration changes. On init it:
+ * 1. Triggers an initial [cargarDatos] call to populate the state immediately.
+ * 2. Starts [observarTransacciones] to keep state in sync with every Room write.
+ */
 class BudgetViewModel(application: Application) : AndroidViewModel(application) {
 
     private val app = application as FinanzApp
     private val budgetService = BudgetService(app.transaccionRepository)
 
     private val _uiState = MutableStateFlow(UiState())
+
+    /** Read-only view of the current UI state. Collected by Compose screens. */
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
     init {
@@ -34,6 +62,10 @@ class BudgetViewModel(application: Application) : AndroidViewModel(application) 
         observarTransacciones()
     }
 
+    /**
+     * Collects the [TransaccionRepository.transacciones] Flow and recalculates
+     * all financial figures on every emission (i.e. every database change).
+     */
     private fun observarTransacciones() {
         viewModelScope.launch {
             app.transaccionRepository.transacciones.collect { transacciones ->
@@ -43,6 +75,10 @@ class BudgetViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    /**
+     * Recomputes [UiState.saldoTotal], [UiState.saldoMesActual], and
+     * [UiState.resumenMensual] by delegating to [BudgetService].
+     */
     private suspend fun actualizarCalculos() {
         val saldoTotal = budgetService.calcularSaldo()
         val saldoMesActual = budgetService.calcularSaldoMesActual()
@@ -56,6 +92,11 @@ class BudgetViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    /**
+     * Triggers a full reload of financial figures with a loading indicator.
+     *
+     * Called on init and can be invoked from the UI to force a refresh.
+     */
     fun cargarDatos() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
@@ -64,6 +105,13 @@ class BudgetViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    /**
+     * Records a new transaction and triggers a reactive UI update via Room.
+     *
+     * @param descripcion a short description of the movement
+     * @param monto       the absolute amount (positive; direction is set by [tipo])
+     * @param tipo        [TipoTransaccion.INGRESO] for income or [TipoTransaccion.GASTO] for expense
+     */
     fun registrarTransaccion(
         descripcion: String,
         monto: Double,
@@ -78,6 +126,11 @@ class BudgetViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    /**
+     * Deletes the transaction with the given ID and triggers a reactive UI update.
+     *
+     * @param id the primary key of the transaction to remove
+     */
     fun eliminarTransaccion(id: Long) {
         viewModelScope.launch {
             budgetService.eliminarTransaccion(id)

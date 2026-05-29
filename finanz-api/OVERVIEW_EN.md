@@ -1,29 +1,31 @@
-# 💰 Finanz API
+# Finanz API
 
-> Evolution of the [Finanz Core version](#) towards a **Complete REST API with Spring Boot**, embedded H2 database, JPA/Hibernate and integration tests with real Spring context. Same business logic, professional architecture.
+> The Spring Boot evolution of [Finanz Core](../finanz-core/) — same personal finance domain, now exposed as a **REST API** with Spring Data JPA, an embedded H2 database, and real integration tests. No frameworks in Core; full Spring stack here.
+
+Part of the [FinanzApp monorepo](../README.md) · Technical guide: [`README_EN.md`](README_EN.md)
 
 ---
 
-## 🎯 What does this app do?
+## What it does
 
-Exposes a REST API to manage personal financial transactions. It allows you to record income and expenses, consult them, calculate balances and obtain monthly summaries, all through HTTP endpoints with JSON responses.
+Exposes a REST API for personal financial transaction management: record income and expenses, query history, calculate balances, and retrieve monthly summaries.
 
-**Available endpoints:**
+**Endpoints:**
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/api/transactions` | Record complete transaction |
-| `POST` | `/api/transactions/simple` | Record transaction with basic validation |
+| `POST` | `/api/transactions` | Record a full transaction |
+| `POST` | `/api/transactions/simple` | Record a transaction with minimal input |
 | `GET` | `/api/transactions` | List all transactions |
 | `GET` | `/api/transactions/{id}` | Get transaction by ID |
-| `DELETE` | `/api/transactions/{id}` | Delete transaction |
+| `DELETE` | `/api/transactions/{id}` | Delete a transaction |
 | `GET` | `/api/balance` | Total accumulated balance |
 | `GET` | `/api/balance/current-month` | Current month balance |
-| `GET` | `/api/summary/current-month` | Complete monthly summary (income, expenses, balance, transactions) |
+| `GET` | `/api/summary/current-month` | Full monthly summary (income, expenses, balance, transactions) |
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 ┌───────────────────────────┐
@@ -33,174 +35,113 @@ Exposes a REST API to manage personal financial transactions. It allows you to r
 ├───────────────────────────┤
 │   TransaccionRepository   │  ← Data access (JpaRepository)
 ├───────────────────────────┤
-│   H2 Database             │  ← Embedded DB (fichero en disco)
+│   H2 Database             │  ← Embedded DB (file persistence: ./data/finanz-api)
 └───────────────────────────┘
 ```
 
 | Layer | Responsibility |
-|------|----------------|
+|-------|----------------|
 | `controller` | Receive HTTP requests, validate input, return `ResponseEntity` |
-| `service` | Business logic: balance calculation, filtering by dates, summaries |
-| `repository` | Data access via Spring Data JPA with queries derived from the method name |
-| `model` | JPA entity `Transaction` mapped to table `transactions` |
-| `discount` | `SimpleTransaccionRequest` for the simplified logging endpoint |
+| `service` | Business logic: balance calculation, date filtering, summaries |
+| `repository` | Spring Data JPA with derived-query methods (no manual SQL) |
+| `model` | JPA entity `Transaccion` mapped to the `transactions` table |
+| `dto` | `SimpleTransaccionRequest` for the simplified recording endpoint |
 
 ---
 
-## 🧰 Technical stack
+## Technical stack
 
 | Technology | Details |
-|------------|----------|
+|------------|---------|
 | **Java** | 21 |
-| **Spring Boot** | 4.0.3 |
+| **Spring Boot** | 3.x |
 | **Spring Data JPA** | Repository pattern with Hibernate |
-| **H2 Database** | Embedded database with file persistence (`./data/finanz-api`) |
-| **Maven** | Dependency management and build cycle |
+| **H2 Database** | Embedded with file persistence |
+| **Maven** | Dependency management and build |
 | **JUnit 5** | Integration tests with `@SpringBootTest` |
 
 ---
 
-## 🧪 Tests
+## Tests
 
-The tests are **real integration tests** that bootstrap the full Spring context with an in-memory H2 database (`application-test.properties`). There are no mocks.
+Real integration tests — no mocks, full Spring context, in-memory H2:
 
 ```java
 @SpringBootTest
 @ActiveProfiles("test")
-class FinanzApiApplicationTests {
-    // ...
-}
+class FinanzApiApplicationTests { ... }
 ```
 
-**Cases covered:**
-- Transaction log: verify that ID and date are assigned automatically
-- Balance calculation with combined income and expenses
-- Zero balance when there are no transactions
-- Delete existing transaction returns `true`
-- Delete non-existent ID returns `false` without throwing exception
+Cases covered: transaction recording, balance calculation, zero-balance state, delete (existing and non-existent IDs).
 
 ---
 
-## 🚀 How to run
+## How to run
 
-### Option A: Try on GitHub Codespaces (without installing anything, without card)
+### GitHub Codespaces (no local install)
 
-Use the Codespaces button in the root README of the repository.
-
-**Guide for recruiters** — 3 steps:
-
-1. **Open**: Click the button above → sign in with GitHub if prompted
-2. **Boot**: In the terminal, run `./mvnw spring-boot:run` and wait to see *"Started FinanzApiApplication"*
-3. **Try**: **PORTS** tab (below) → port **8080** → **"Open in Browser"** → you will see a page with links to test the API
-
-**No credit card required** — GitHub gives 120 hours/month free to personal accounts.
-
-### Option B: Test the live API (if deployed)
-
-If the API is deployed in Render/Railway/etc., you can test it directly. Replace `YOUR-URL` with the actual URL:
+Click the **Open in GitHub Codespaces** button in the root README. Then:
 
 ```bash
-curl https://TU-URL/api/saldo
-curl -X POST https://TU-URL/api/transacciones/simple \
-  -H "Content-Type: application/json" \
-  -d '{"descripcion": "Nómina", "monto": 1800.0, "tipo": "INGRESO"}'
-```
-
-### Option C: Run locally
-
-**Requirements**: Java 21+, Maven 3.9+
-
-```bash
+cd finanz-api
 ./mvnw spring-boot:run
 ```
 
-The API is available at `http://localhost:8080`.
+Open **PORTS** → port `8080` → **Open in Browser**.
 
-### Deploy to the cloud (Render, Railway, Fly.io)
+### Local
 
-See **[DEPLOY_ES.md](DEPLOY_ES.md)** for the complete deployment guide.
-
-### Run the tests
+```bash
+cd finanz-api
+./mvnw spring-boot:run
+# API at http://localhost:8080
+```
 
 ```bash
 ./mvnw test
 ```
 
-### H2 Console (browse the database in the browser)
-
-With the application running, access:
+### H2 Console
 
 ```
 http://localhost:8080/h2-console
+JDBC URL:  jdbc:h2:file:./data/finanz-api
+Username:  sa
+Password:  (empty)
 ```
 
-| Field | Worth |
-|-------|-------|
-| JDBC URL | `jdbc:h2:file:./data/finanz-api` |
-| Username | `sa` |
-| Password | *(empty)* |
+### Deploy to the cloud
+
+See [`DEPLOY_EN.md`](DEPLOY_EN.md) for Render / Railway / Fly.io instructions.
 
 ---
 
-## 📬 Examples of use
+## Design highlights
 
-### Record a transaction
-
-```bash
-curl -X POST http://localhost:8080/api/transacciones/simple \
-  -H "Content-Type: application/json" \
-  -d '{"descripcion": "Nómina", "monto": 1800.0, "tipo": "INGRESO"}'
-```
-
-### Check the balance of the month
-
-```bash
-curl http://localhost:8080/api/saldo/mes-actual
-# → {"saldo": 1050.0}
-```
-
-### Get monthly summary
-
-```bash
-curl http://localhost:8080/api/resumen/mes-actual
-# → {"mes": 3, "anio": 2026, "ingresos": 1800.0, "gastos": 750.0, "saldo": 1050.0, "transacciones": [...]}
-```
+- **Derived-query repository**: `findByFechaBetween` and `findByTipo` resolved by Spring Data without manual SQL
+- **Two recording endpoints**: `/transactions` for full objects; `/transactions/simple` for quick client-side use
+- **Isolated test profile**: `application-test.properties` uses `ddl-auto=create-drop` in-memory H2, no interference with dev data
+- **Explicit `ResponseEntity`**: controllers always return the correct HTTP status (`200`, `204`, `400`, `404`)
+- **Architecture continuity**: `BudgetService` logic is conceptually identical to Finanz Core — same domain, different delivery mechanism
 
 ---
 
-## 💡 Featured Design Decisions
-
-- **`JpaRepository` with derived query**: `findByFechaBetween` and `findByTipo` are automatically resolved by Spring Data without writing SQL, keeping the repository clean.
-- **Two logging endpoints**: `/transactions` accepts the full object (ideal for integrations), `/transactions/simple` validates and builds the entity in the service (safer for direct use from the client).
-- **Isolated test profile**: `application-test.properties` uses in-memory H2 with `ddl-auto=create-drop`, avoiding interference with development data.
-- Explicit **`ResponseEntity`**: The handler always returns the correct HTTP code (`200`, `204`, `400`, `404`) instead of relying on default behaviors.
-- **Evolution since the Finanz Core version**: The logic of `BudgetService` is identical in concept to the console version, demonstrating how a clean architecture makes it easier to migrate between interfaces.
-
----
-
-## 📁 Project structure
+## Project structure
 
 ```
 src/
-└── main/
-    └── java/com/finanzapi/
-        ├── FinanzApiApplication.java
-        ├── controller/
-        │   ├── BudgetController.java
-        │   └── dto/
-        │       └── SimpleTransaccionRequest.java
-        ├── service/
-        │   └── BudgetService.java
-        ├── repository/
-        │   └── TransaccionRepository.java
-        └── model/
-            ├── Transaccion.java
-            └── TipoTransaccion.java
-└── test/
-    └── java/com/finanzapi/
-        └── FinanzApiApplicationTests.java
+├── main/java/com/finanzapi/
+│   ├── FinanzApiApplication.java
+│   ├── controller/
+│   │   ├── BudgetController.java
+│   │   └── dto/SimpleTransaccionRequest.java
+│   ├── service/BudgetService.java
+│   ├── repository/TransaccionRepository.java
+│   └── model/
+│       ├── Transaccion.java
+│       └── TipoTransaccion.java
+└── test/java/com/finanzapi/
+    └── FinanzApiApplicationTests.java
 ```
 
----
-
-> This project is the API version of [Finanz Core](#). Both share the same business logic and layered architecture, evolving from CSV persistence to JPA with a relational database.
+> This module is the HTTP-layer evolution of [Finanz Core](../finanz-core/). Both share the same domain logic — the difference is delivery: CSV + CLI vs JPA + REST.

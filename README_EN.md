@@ -74,6 +74,8 @@ curl http://localhost:8080/api/saldo
 
 ## Documentation per app
 
-- [Finanz Core - README](finanz-core/README_ES.md)
-- [Finanz API - README](finanz-api/README_ES.md)
-- [Finanz App - README](finanz-app/README_ES.md)
+| App | Overview | Technical guide |
+|-----|----------|----------------|
+| Finanz Core | [`finanz-core/OVERVIEW_EN.md`](finanz-core/OVERVIEW_EN.md) | [`finanz-core/README_EN.md`](finanz-core/README_EN.md) |
+| Finanz API | [`finanz-api/OVERVIEW_EN.md`](finanz-api/OVERVIEW_EN.md) | [`finanz-api/README_EN.md`](finanz-api/README_EN.md) |
+| Finanz App | [`finanz-app/OVERVIEW_EN.md`](finanz-app/OVERVIEW_EN.md) | [`finanz-app/README_EN.md`](finanz-app/README_EN.md) |

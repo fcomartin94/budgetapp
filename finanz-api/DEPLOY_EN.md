@@ -117,7 +117,7 @@ Required files: `.devcontainer/devcontainer.json` (already included).
 
 ## Add URL to README
 
-Once deployed, update your `README_ES.md` or `OVERVIEW_ES.md` with something like:
+Once deployed, update your `README.md` or `OVERVIEW_EN.md` with something like:
 
 ```markdown
 ## 🌐 API en vivo
