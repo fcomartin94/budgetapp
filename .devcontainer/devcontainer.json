@@ -1,0 +1,26 @@
+{
+  "name": "Finanz API - Spring Boot",
+  "image": "mcr.microsoft.com/devcontainers/java:1-21-bookworm",
+
+  "features": {
+    "ghcr.io/devcontainers/features/java:1": {
+      "version": "21",
+      "installMaven": "true",
+      "installGradle": "false"
+    }
+  },
+
+  "forwardPorts": [8080],
+
+  "postCreateCommand": "cd finanz-api && ./mvnw -DskipTests compile",
+
+  "postStartCommand": "bash -c 'cd finanz-api && nohup ./mvnw spring-boot:run > /tmp/spring-boot.log 2>&1 &'",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vscjava.vscode-java-pack"
+      ]
+    }
+  }
+}
