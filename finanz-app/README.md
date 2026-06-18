@@ -20,15 +20,28 @@ Part of the [FinanzApp monorepo](../README.md) — see also [`finanz-core/`](../
 
 ---
 
+## Prerequisites
+
+- Android Studio (Hedgehog or newer)
+- JDK 17
+- Android emulator or physical device (API 26+)
+
+---
+
 ## Run
+
+Open the `finanz-app` folder in Android Studio, sync Gradle, and run the `app` configuration.
+
+Or from the terminal:
 
 ```bash
 cd finanz-app
 ./gradlew assembleDebug
 # APK: app/build/outputs/apk/debug/app-debug.apk
-```
 
-Or open the `finanz-app` folder in Android Studio, sync Gradle, and run the `app` configuration.
+# Install directly on a connected device or emulator
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+```
 
 ---
 

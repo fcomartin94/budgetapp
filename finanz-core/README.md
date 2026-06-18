@@ -45,6 +45,12 @@ finanz-core/
 
 ---
 
+## Prerequisites
+
+- Java 17+
+
+---
+
 ## Run
 
 ```bash

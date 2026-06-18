@@ -19,6 +19,13 @@ Part of the [FinanzApp monorepo](../README.md) — see also [`finanz-core/`](../
 
 ---
 
+## Prerequisites
+
+- Java 21
+- Maven 3.9+ (or use the included `./mvnw` wrapper — no local Maven needed)
+
+---
+
 ## Run
 
 ```bash
@@ -29,6 +36,21 @@ cd finanz-api
 
 ```bash
 ./mvnw test
+```
+
+## Try it
+
+```bash
+# Record a transaction
+curl -s -X POST http://localhost:8080/api/transacciones/simple \
+  -H "Content-Type: application/json" \
+  -d '{"descripcion": "Salary", "monto": 2000.0, "tipo": "INGRESO"}'
+
+# Check balance
+curl http://localhost:8080/api/saldo
+
+# Monthly summary
+curl http://localhost:8080/api/resumen/mes-actual
 ```
 
 ---
