@@ -1,5 +1,12 @@
 package test;
 
+/**
+ * Minimal assertion library for the Finanz Core test suite.
+ *
+ * <p>Provides {@code assertEquals} and {@code assertTrue} overloads that throw
+ * {@link AssertionError} with a descriptive message on failure. This demonstrates
+ * how assertion frameworks work internally — no JUnit or external libraries required.</p>
+ */
 public final class TestAssertions {
 
     private TestAssertions() {

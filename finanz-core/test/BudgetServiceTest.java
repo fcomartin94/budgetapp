@@ -5,6 +5,17 @@ import model.Transaccion;
 import repository.TransaccionRepository;
 import service.BudgetService;
 
+/**
+ * Tests for {@link service.BudgetService} business logic.
+ *
+ * <p>Each test uses an isolated temporary CSV file (via {@link TestUtils#tempCsvPath})
+ * to guarantee no shared state between runs. No JUnit — the suite is registered in
+ * and executed by {@link TestRunner}.</p>
+ *
+ * <p>Cases covered: transaction recording with correct balance calculation; current-month
+ * balance filtering that ignores transactions from previous months.</p>
+ */
+
 import java.time.LocalDate;
 
 public final class BudgetServiceTest {

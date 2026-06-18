@@ -6,6 +6,14 @@ import util.MoneyFormatter;
 
 import java.util.Scanner;
 
+/**
+ * CLI entry point for user interaction.
+ *
+ * <p>Presents a menu loop and reads user input via {@link Scanner}. This class
+ * contains zero business logic — all financial operations are delegated to
+ * {@link BudgetService}. Replacing this layer with a GUI or REST controller
+ * would require no changes to the service or repository layers.</p>
+ */
 public class ConsolaMenu {
 
     private final BudgetService servicio;

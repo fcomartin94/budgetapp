@@ -7,6 +7,15 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.finanzapp.data.model.Transaccion
 
+/**
+ * Room database for the FinanzApp local storage.
+ *
+ * Single-instance database (`finanzapp_db`) holding the [Transaccion] entity.
+ * [Converters] handles [java.time.LocalDate] ↔ String and [com.finanzapp.data.model.TipoTransaccion]
+ * ↔ String conversions that Room cannot handle natively.
+ *
+ * Access the singleton via [getDatabase]; do not call the constructor directly.
+ */
 @Database(entities = [Transaccion::class], version = 1, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {

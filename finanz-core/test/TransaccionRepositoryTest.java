@@ -4,6 +4,16 @@ import model.TipoTransaccion;
 import model.Transaccion;
 import repository.TransaccionRepository;
 
+/**
+ * Tests for {@link repository.TransaccionRepository} CSV persistence.
+ *
+ * <p>Each test uses an isolated temporary CSV file to prevent interference
+ * between runs and with real application data. No JUnit — executed by {@link TestRunner}.</p>
+ *
+ * <p>Cases covered: save / find-by-id / delete lifecycle; CSV loading tolerance
+ * for rows with extra columns (backwards compatibility).</p>
+ */
+
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;

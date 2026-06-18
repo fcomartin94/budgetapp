@@ -1,5 +1,14 @@
 package test;
 
+/**
+ * Entry point for the Finanz Core test suite.
+ *
+ * <p>Runs all test classes sequentially and prints a final {@code OK / FAIL} count.
+ * Exits with code {@code 1} if any suite fails, so the result can be checked in CI
+ * or shell scripts.</p>
+ *
+ * <p>Run with: {@code java -cp out test.TestRunner}</p>
+ */
 public class TestRunner {
 
     public static void main(String[] args) {

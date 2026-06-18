@@ -4,6 +4,12 @@ import java.io.File;
 import java.io.IOException;
 import java.util.UUID;
 
+/**
+ * Shared helpers for test isolation in the Finanz Core test suite.
+ *
+ * <p>Provides temporary file management so each test runs against its own
+ * CSV path, preventing interference with real data or between test cases.</p>
+ */
 public final class TestUtils {
 
     private TestUtils() {

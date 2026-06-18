@@ -2,6 +2,14 @@ package com.finanzapi.controller.dto;
 
 import com.finanzapi.model.TipoTransaccion;
 
+/**
+ * Simplified request payload for the {@code POST /api/transacciones/simple} endpoint.
+ *
+ * <p>Accepts only the three fields a client strictly needs to record a transaction.
+ * Server-side validation in {@link com.finanzapi.controller.BudgetController} ensures
+ * that {@code descripcion} is not blank, {@code monto} is positive, and {@code tipo}
+ * is non-null before the request is forwarded to the service layer.</p>
+ */
 public class SimpleTransaccionRequest {
     private String descripcion;
     private double monto;

@@ -3,6 +3,20 @@ package com.finanzapi.model;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
+/**
+ * JPA entity representing a single financial transaction.
+ *
+ * <p>Persisted in the H2 {@code transacciones} table. The schema is managed
+ * by Hibernate via the active Spring profile ({@code ddl-auto=update} for dev,
+ * {@code create-drop} for the test profile).</p>
+ *
+ * <p>The {@code fecha} field is always overwritten to today by
+ * {@link com.finanzapi.service.BudgetService#registrar} — values supplied by
+ * the client are ignored.</p>
+ *
+ * <p>This entity is the Spring Data / JPA counterpart of {@code finanz-core}'s
+ * plain {@code Transaccion} class; both share the same field names and semantics.</p>
+ */
 @Entity
 @Table(name = "transacciones")
 public class Transaccion {

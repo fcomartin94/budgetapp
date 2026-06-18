@@ -12,6 +12,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.finanzapp.ui.theme.FinanzAppTheme
 import com.finanzapp.ui.navigation.FinanzAppNavHost
 
+/**
+ * Single activity that hosts the entire Compose UI.
+ *
+ * Enables edge-to-edge display and sets [FinanzAppNavHost] as the content root.
+ * The [com.finanzapp.ui.viewmodel.BudgetViewModel] is created here via
+ * `viewModel()` and passed down to the nav host, surviving configuration changes.
+ */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

@@ -4,6 +4,14 @@ import androidx.room.TypeConverter
 import com.finanzapp.data.model.TipoTransaccion
 import java.time.LocalDate
 
+/**
+ * Room [TypeConverter] implementations for types that SQLite cannot store natively.
+ *
+ * - [java.time.LocalDate] ↔ ISO-8601 string (e.g. `"2026-06-18"`)
+ * - [com.finanzapp.data.model.TipoTransaccion] ↔ enum name string (e.g. `"INGRESO"`)
+ *
+ * Registered on [AppDatabase] via `@TypeConverters(Converters::class)`.
+ */
 class Converters {
 
     @TypeConverter

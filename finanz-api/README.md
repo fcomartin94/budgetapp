@@ -1,10 +1,23 @@
 # Finanz API
 
-> REST API for personal budget management — the Spring Boot evolution of [Finanz Core](../finanz-core/). Same domain logic, now exposed over HTTP with **Spring Boot**, **Spring Data JPA**, and an **H2** embedded database.
-
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/fcomartin94/finanz-core)
+REST API for personal budget management — the Spring Boot evolution of [Finanz Core](../finanz-core/). Same domain logic, now exposed over HTTP with **Spring Boot 3**, **Spring Data JPA**, and an embedded **H2** database.
 
 Part of the [FinanzApp monorepo](../README.md) — see also [`finanz-core/`](../finanz-core/) (CLI) and [`finanz-app/`](../finanz-app/) (Android).
+
+---
+
+## Tech stack
+
+| Layer | Technology |
+|-------|-----------|
+| Language | Java 21 |
+| Framework | Spring Boot 3 |
+| ORM / DB access | Spring Data JPA / Hibernate |
+| Database | H2 embedded (file persistence: `./data/finanz-api`) |
+| Testing | JUnit 5 + `@SpringBootTest` integration tests |
+| Build | Maven 3 |
+
+---
 
 ## Run
 
@@ -18,20 +31,69 @@ cd finanz-api
 ./mvnw test
 ```
 
-## Key endpoints
+---
+
+## API reference
+
+### Transactions
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/api/transactions` | Record a transaction |
-| `GET` | `/api/transactions` | List all transactions |
-| `DELETE` | `/api/transactions/{id}` | Delete a transaction |
-| `GET` | `/api/balance` | Total balance |
-| `GET` | `/api/balance/current-month` | Current month balance |
-| `GET` | `/api/summary/current-month` | Full monthly summary |
+| `POST` | `/api/transacciones` | Record a full transaction |
+| `POST` | `/api/transacciones/simple` | Record with minimal input (description, amount, type) |
+| `GET` | `/api/transacciones` | List all transactions |
+| `GET` | `/api/transacciones/{id}` | Get a transaction by ID |
+| `DELETE` | `/api/transacciones/{id}` | Delete a transaction — `204 No Content` or `404` |
 
-## Documentation
+### Balance & summary
 
-- **Technical guide** (endpoints, architecture, testing): [`README_EN.md`](README_EN.md)
-- **Portfolio overview**: [`OVERVIEW_EN.md`](OVERVIEW_EN.md)
-- **Deployment guide**: [`DEPLOY_EN.md`](DEPLOY_EN.md)
-- **Help / FAQ**: [`HELP_EN.md`](HELP_EN.md)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/saldo` | All-time net balance |
+| `GET` | `/api/saldo/mes-actual` | Current month balance |
+| `GET` | `/api/resumen/mes-actual` | Full monthly summary — income, expenses, balance, transactions |
+
+---
+
+## Project structure
+
+```
+src/main/java/com/finanzapi/
+├── FinanzApiApplication.java
+├── controller/
+│   ├── BudgetController.java          REST endpoints
+│   └── dto/SimpleTransaccionRequest.java
+├── service/
+│   └── BudgetService.java             Business logic — balances, summaries
+├── repository/
+│   └── TransaccionRepository.java     Spring Data JPA with derived queries
+└── model/
+    ├── Transaccion.java               JPA entity (transacciones table)
+    └── TipoTransaccion.java           INGRESO / GASTO enum
+```
+
+---
+
+## H2 console
+
+```
+http://localhost:8080/h2-console
+JDBC URL:  jdbc:h2:file:./data/finanz-api
+Username:  sa
+Password:  (empty)
+```
+
+---
+
+## Design highlights
+
+- **Two recording endpoints** — `/transacciones` accepts the full entity; `/transacciones/simple` validates primitives server-side for lightweight client use.
+- **Derived-query repository** — `findByTipo` and `findByFechaBetween` resolved by Spring Data without manual SQL.
+- **Isolated test profile** — `application-test.properties` uses `ddl-auto=create-drop` in-memory H2, no interference with dev data.
+- **Architecture continuity** — `BudgetService` logic is conceptually identical to Finanz Core; the difference is delivery mechanism (CSV + CLI → JPA + REST).
+
+---
+
+## License
+
+MIT
