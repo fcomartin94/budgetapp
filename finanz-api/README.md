@@ -1,6 +1,6 @@
 # Finanz API
 
-REST API for personal budget management — the Spring Boot evolution of [Finanz Core](../finanz-core/). Same domain logic, now exposed over HTTP with **Spring Boot 3**, **Spring Data JPA**, and an embedded **H2** database.
+REST API for personal budget management — the Spring Boot evolution of [Finanz Core](../finanz-core/). Same domain logic, now exposed over HTTP with **Spring Boot 4**, **Spring Data JPA**, and an embedded **H2** database.
 
 Part of the [FinanzApp monorepo](../README.md) — see also [`finanz-core/`](../finanz-core/) (CLI) and [`finanz-app/`](../finanz-app/) (Android).
 
@@ -11,7 +11,7 @@ Part of the [FinanzApp monorepo](../README.md) — see also [`finanz-core/`](../
 | Layer | Technology |
 |-------|-----------|
 | Language | Java 21 |
-| Framework | Spring Boot 3 |
+| Framework | Spring Boot 4 |
 | ORM / DB access | Spring Data JPA / Hibernate |
 | Database | H2 embedded (file persistence: `./data/finanz-api`) |
 | Testing | JUnit 5 + `@SpringBootTest` integration tests |
@@ -57,6 +57,12 @@ curl http://localhost:8080/api/resumen/mes-actual
 
 ## API reference
 
+### Discovery
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/` | Service status and endpoint index |
+
 ### Transactions
 
 | Method | Endpoint | Description |
@@ -83,6 +89,7 @@ curl http://localhost:8080/api/resumen/mes-actual
 src/main/java/com/finanzapi/
 ├── FinanzApiApplication.java
 ├── controller/
+│   ├── RootController.java            GET / — service status and endpoint index
 │   ├── BudgetController.java          REST endpoints
 │   └── dto/SimpleTransaccionRequest.java
 ├── service/
@@ -92,17 +99,6 @@ src/main/java/com/finanzapi/
 └── model/
     ├── Transaccion.java               JPA entity (transacciones table)
     └── TipoTransaccion.java           INGRESO / GASTO enum
-```
-
----
-
-## H2 console
-
-```
-http://localhost:8080/h2-console
-JDBC URL:  jdbc:h2:file:./data/finanz-api
-Username:  sa
-Password:  (empty)
 ```
 
 ---
